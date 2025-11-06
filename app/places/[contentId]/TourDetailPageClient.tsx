@@ -5,7 +5,11 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TourDetailInfo from "@/components/tour-detail/TourDetailInfo";
 import TourDetailMap from "@/components/tour-detail/TourDetailMap";
+import TourDetailIntro from "@/components/tour-detail/TourDetailIntro";
+import TourDetailGallery from "@/components/tour-detail/TourDetailGallery";
 import { useTourDetail } from "@/hooks/useTourDetail";
+import { useTourIntro } from "@/hooks/useTourIntro";
+import { useTourImages } from "@/hooks/useTourImages";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -27,6 +31,11 @@ export default function TourDetailPageClient({
   contentId,
 }: TourDetailPageClientProps) {
   const { data: detail, isLoading, error } = useTourDetail(contentId);
+  const { data: intro, isLoading: isLoadingIntro } = useTourIntro(
+    contentId,
+    detail?.contenttypeid || "",
+  );
+  const { data: images, isLoading: isLoadingImages } = useTourImages(contentId);
 
   if (isLoading) {
     return (
@@ -91,6 +100,12 @@ export default function TourDetailPageClient({
         <section className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-12">
             <TourDetailInfo detail={detail} />
+            <TourDetailIntro intro={intro} isLoading={isLoadingIntro} />
+            <TourDetailGallery
+              images={images || []}
+              isLoading={isLoadingImages}
+              title={detail.title}
+            />
             <TourDetailMap detail={detail} />
           </div>
         </section>

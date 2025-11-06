@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { TourDetail } from "@/lib/types/tour";
 import { getTourTypeName } from "@/lib/utils/tour-type-converter";
 import { Button } from "@/components/ui/button";
+import ShareButton from "./ShareButton";
 import { cn } from "@/lib/utils";
 
 /**
@@ -84,7 +85,12 @@ export default function TourDetailInfo({
       <div className="flex flex-col gap-6">
         {/* 관광지명 및 타입 */}
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold sm:text-4xl">{detail.title}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="flex-1 text-3xl font-bold sm:text-4xl">
+              {detail.title}
+            </h1>
+            <ShareButton size="sm" variant="outline" />
+          </div>
           {tourTypeName && (
             <div className="inline-flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">

@@ -67,13 +67,47 @@ function ErrorState({
   error: Error;
   className?: string;
 }) {
+  const isApiKeyError = error.message.includes(
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY",
+  );
+  const isContainerError =
+    error.message.includes("지도 컨테이너를 찾을 수 없습니다");
+
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <div className="flex flex-col items-center gap-4 p-8 text-center">
         <AlertCircle className="size-12 text-destructive" />
         <div className="flex flex-col gap-2">
           <h3 className="text-lg font-semibold">지도를 불러올 수 없습니다</h3>
-          <p className="text-sm text-muted-foreground">{error.message}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {error.message}
+          </p>
+          {isApiKeyError && (
+            <div className="mt-4 rounded-lg bg-muted p-4 text-left">
+              <p className="text-xs font-medium mb-2">해결 방법:</p>
+              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>.env.local 파일을 프로젝트 루트에 생성하세요</li>
+                <li>
+                  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key 형식으로
+                  추가하세요
+                </li>
+                <li>
+                  Google Cloud Console에서 Maps JavaScript API를 활성화하세요
+                </li>
+                <li>개발 서버를 재시작하세요 (pnpm dev)</li>
+              </ol>
+            </div>
+          )}
+          {isContainerError && (
+            <div className="mt-4 rounded-lg bg-muted p-4 text-left">
+              <p className="text-xs font-medium mb-2">해결 방법:</p>
+              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>브라우저 콘솔(F12)에서 에러 메시지를 확인하세요</li>
+                <li>페이지를 새로고침하세요</li>
+                <li>개발 서버를 재시작하세요 (pnpm dev)</li>
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -134,7 +168,13 @@ export default function GoogleMap({
       <div
         id={mapId}
         className="h-full min-h-[400px] w-full rounded-lg border border-border"
+        data-testid="map-container"
       />
+      {map && (
+        <div className="absolute bottom-2 right-2 z-10 rounded bg-background/80 px-2 py-1 text-xs text-muted-foreground">
+          지도 로드 완료
+        </div>
+      )}
     </div>
   );
 }

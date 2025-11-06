@@ -169,22 +169,52 @@ export function useGoogleMap(
    */
   useEffect(() => {
     let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 10;
+    const retryDelay = 100; // 100ms
 
     async function initMap() {
       try {
         setIsLoading(true);
         setError(null);
 
+        console.log("[useGoogleMap] 지도 초기화 시작, mapId:", mapId);
+
         // Google Maps API 스크립트 로드
         await loadGoogleMapsScript();
 
         if (!isMounted) return;
 
-        // 지도 컨테이너 확인
-        const mapContainer = document.getElementById(mapId);
-        if (!mapContainer) {
-          throw new Error(`지도 컨테이너를 찾을 수 없습니다: ${mapId}`);
+        // 지도 컨테이너 확인 (여러 번 시도)
+        let mapContainer: HTMLElement | null = null;
+
+        while (retryCount < maxRetries && !mapContainer) {
+          mapContainer = document.getElementById(mapId);
+
+          if (!mapContainer) {
+            retryCount++;
+            console.log(
+              `[useGoogleMap] 지도 컨테이너를 찾을 수 없음 (시도 ${retryCount}/${maxRetries}), mapId: ${mapId}`,
+            );
+
+            if (retryCount < maxRetries) {
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            }
+          }
         }
+
+        if (!mapContainer) {
+          throw new Error(
+            `지도 컨테이너를 찾을 수 없습니다: ${mapId}\n` +
+              "지도 컨테이너가 DOM에 렌더링되었는지 확인해주세요.",
+          );
+        }
+
+        if (!isMounted) return;
+
+        console.log(
+          "[useGoogleMap] 지도 컨테이너 찾음, 지도 인스턴스 생성 시작",
+        );
 
         // 지도 인스턴스 생성
         const mapInstance = new google.maps.Map(mapContainer, {

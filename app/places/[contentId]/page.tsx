@@ -39,12 +39,26 @@ export async function generateMetadata({
       };
     }
 
+    // 설명 생성 (100자 이내, 줄바꿈 제거)
     const description = detail.overview
-      ? detail.overview.slice(0, 100).replace(/\n/g, " ")
+      ? detail.overview.slice(0, 100).replace(/\n/g, " ").trim()
       : `${detail.title}의 상세 정보를 확인하세요.`;
+
+    // 이미지 URL (대표 이미지 우선)
     const imageUrl = detail.firstimage || detail.firstimage2;
+
+    // 사이트 URL 생성 (환경변수 또는 기본값 사용)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
+
+    // 페이지 URL 생성
     const pageUrl = `${siteUrl}/places/${contentId}`;
+
+    console.log("[generateMetadata] 메타데이터 생성:", {
+      title: detail.title,
+      description: description.slice(0, 50) + "...",
+      imageUrl: imageUrl ? "있음" : "없음",
+      pageUrl,
+    });
 
     return {
       title: `${detail.title} - My Trip`,
@@ -52,9 +66,19 @@ export async function generateMetadata({
       openGraph: {
         title: detail.title,
         description,
-        images: imageUrl ? [imageUrl] : [],
+        images: imageUrl
+          ? [
+              {
+                url: imageUrl,
+                width: 1200,
+                height: 630,
+                alt: detail.title,
+              },
+            ]
+          : [],
         url: pageUrl,
         type: "website",
+        siteName: "My Trip",
       },
       twitter: {
         card: "summary_large_image",

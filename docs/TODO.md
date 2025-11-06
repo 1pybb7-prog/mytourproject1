@@ -234,29 +234,29 @@
 
 ### 공유 기능 (MVP 2.4.5)
 
-- [ ] `components/tour-detail/ShareButton.tsx`
-  - Guideline 준수: PascalCase 네이밍
-  - shadcn/ui Button 컴포넌트 활용
-- [ ] URL 복사 기능
-  - `navigator.clipboard.writeText` 활용
-- [ ] 복사 완료 토스트 메시지
-  - shadcn/ui Toast 활용
-- [ ] Open Graph 메타태그 동적 생성
-  - `generateMetadata` 함수에서 설정
+- [x] `components/tour-detail/ShareButton.tsx` ✅
+  - Guideline 준수: PascalCase 네이밍 ✅
+  - shadcn/ui Button 컴포넌트 활용 ✅
+- [x] URL 복사 기능 ✅
+  - `navigator.clipboard.writeText` 활용 ✅
+- [x] 복사 완료 토스트 메시지 ✅
+  - shadcn/ui Toast 활용 ✅
+- [x] Open Graph 메타태그 동적 생성 ✅
+  - `generateMetadata` 함수에서 설정 ✅
 - [ ] 페이지 확인 및 공유 테스트
 
-### 추가 정보 섹션 (향후 구현)
+### 추가 정보 섹션
 
-- [ ] `components/tour-detail/TourDetailIntro.tsx`
-  - Guideline 준수: PascalCase 네이밍
-  - 운영정보 표시 (운영시간, 휴무일, 이용요금, 주차 등)
-- [ ] `detailIntro2` API 연동 (React Query 활용)
-- [ ] `components/tour-detail/TourDetailGallery.tsx`
-  - Guideline 준수: PascalCase 네이밍
-  - `next/image` 사용 (이미지 최적화)
-  - Swiper 또는 캐러셀 컴포넌트 활용
-  - 이미지 클릭 시 전체화면 모달
-- [ ] `detailImage2` API 연동
+- [x] `components/tour-detail/TourDetailIntro.tsx` ✅
+  - Guideline 준수: PascalCase 네이밍 ✅
+  - 운영정보 표시 (운영시간, 휴무일, 이용요금, 주차 등) ✅
+- [x] `detailIntro2` API 연동 (React Query 활용) ✅
+- [x] `components/tour-detail/TourDetailGallery.tsx` ✅
+  - Guideline 준수: PascalCase 네이밍 ✅
+  - `next/image` 사용 (이미지 최적화) ✅
+  - 간단한 캐러셀 구현 (그리드 레이아웃) ✅
+  - 이미지 클릭 시 전체화면 모달 ✅
+- [x] `detailImage2` API 연동 ✅
 - [ ] 페이지 확인 (반응형 검증)
 
 ---
