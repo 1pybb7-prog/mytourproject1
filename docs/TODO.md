@@ -87,25 +87,28 @@
   - Spacing-First 정책: `padding` + `gap` 사용 ✅
 - [x] 기본 UI 구조 확인 (헤더, 메인 영역, 푸터) ✅
   - [x] Navbar 컴포넌트 확인 ✅
-  - [ ] 관광지 목록 기능 구현 필요
+- [x] 관광지 목록 기능 구현 완료 ✅
 
 ### 관광지 목록 기능 (MVP 2.1)
 
-- [ ] `components/TourCard.tsx`
-  - Guideline 준수: PascalCase 네이밍, `export default`
-  - Spacing-First 정책: `padding` + `gap` 사용
-  - Tailwind CSS 유틸리티 우선 사용
-  - `next/image` 사용 (이미지 최적화)
-  - 관광지 기본 정보 표시 (이름, 주소, 썸네일, 타입 뱃지)
-- [ ] `components/TourList.tsx`
-  - React Query 훅 연동 (`useTourList`)
-  - 그리드 레이아웃 (반응형)
-  - Spacing-First 정책 준수
-- [ ] `hooks/useTourList.ts`
-  - React Query `useQuery` 활용
-  - `areaBasedList2` API 연동
-  - 페이지네이션 처리
-- [ ] API 연동하여 실제 데이터 표시
+- [x] `components/TourCard.tsx` ✅
+  - Guideline 준수: PascalCase 네이밍, `export default` ✅
+  - Spacing-First 정책: `padding` + `gap` 사용 ✅
+  - Tailwind CSS 유틸리티 우선 사용 ✅
+  - `next/image` 사용 (이미지 최적화) ✅
+  - 관광지 기본 정보 표시 (이름, 주소, 썸네일, 타입 뱃지) ✅
+- [x] `components/TourList.tsx` ✅
+  - React Query 훅 연동 (`useTourList`) ✅
+  - 그리드 레이아웃 (반응형) ✅
+  - Spacing-First 정책 준수 ✅
+  - 로딩/에러/빈 상태 처리 ✅
+- [x] `hooks/useTourList.ts` ✅
+  - React Query `useQuery` 활용 ✅
+  - 하드코딩된 샘플 데이터 반환 (UI 구성용) ✅
+  - 페이지네이션 처리 준비 ✅
+- [x] `lib/utils/tour-type-converter.ts` - 관광 타입 변환 유틸리티 ✅
+- [x] `app/page.tsx` 홈페이지 레이아웃으로 업데이트 ✅
+- [ ] API 연동하여 실제 데이터 표시 (다음 단계)
 - [ ] 페이지 확인 및 스타일링 조정 (반응형 검증)
 
 ### 필터 기능
