@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sortTours, type SortOption } from "@/lib/utils/tour-sorter";
+import type { TourItem } from "@/lib/types/tour";
 
 /**
  * @file TourList.tsx
@@ -33,11 +34,11 @@ interface TourListProps {
   numOfRows?: number;
   pageNo?: number;
   sortOption?: SortOption; // 정렬 옵션
+  selectedTourId?: string; // 선택된 관광지 ID
+  hoveredTourId?: string; // 호버된 관광지 ID
+  onTourSelect?: (tour: TourItem) => void; // 관광지 선택 핸들러
+  onTourHover?: (tourId: string | undefined) => void; // 관광지 호버 핸들러
   className?: string;
-  /** 관광지 선택 핸들러 (지도 연동용) */
-  onTourSelect?: (tourId: string) => void;
-  /** 호버 시 마커 강조 핸들러 (지도 연동용) */
-  onTourHover?: (tourId: string) => void;
 }
 
 /**
@@ -101,9 +102,11 @@ export default function TourList({
   numOfRows = 10,
   pageNo = 1,
   sortOption = "latest",
-  className,
+  selectedTourId,
+  hoveredTourId,
   onTourSelect,
   onTourHover,
+  className,
 }: TourListProps) {
   // 검색 모드: keyword가 있으면 useTourSearch 사용
   const searchQuery = useTourSearch({
@@ -175,17 +178,20 @@ export default function TourList({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2",
         className,
       )}
     >
       {sortedData.map((tour) => (
-        <TourCard
-          key={tour.contentid}
-          tour={tour}
-          onTourSelect={onTourSelect}
-          onTourHover={onTourHover}
-        />
+        <div key={tour.contentid} id={`tour-${tour.contentid}`}>
+          <TourCard
+            tour={tour}
+            isSelected={selectedTourId === tour.contentid}
+            isHovered={hoveredTourId === tour.contentid}
+            onSelect={onTourSelect}
+            onHover={onTourHover}
+          />
+        </div>
       ))}
     </div>
   );

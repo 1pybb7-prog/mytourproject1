@@ -10,8 +10,6 @@ import { MetadataRoute } from "next";
  */
 
 export default function manifest(): MetadataRoute.Manifest {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
-
   return {
     name: "My Trip - 한국 관광지 정보 서비스",
     short_name: "My Trip",

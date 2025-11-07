@@ -13,7 +13,7 @@
 - [x] Development Guidelines 숙지 및 검토 ✅
 - [x] 환경변수 설정 (`.env.local` 파일) ✅
   - [x] `NEXT_PUBLIC_TOUR_API_KEY` (한국관광공사 API) ✅
-  - [x] `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (Google Maps API) ✅
+  - [ ] `NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID` (Naver Maps API) - 지도 구현 시 필요
   - [x] Clerk 인증 키 (기존 설정 확인) ✅
   - [x] Supabase 키 (기존 설정 확인) ✅
 
@@ -25,9 +25,9 @@
   - [x] `TourDetail` 인터페이스 ✅
   - [x] `TourIntro` 인터페이스 ✅
 - [x] `lib/types/bookmark.ts` - 북마크 타입 정의 ✅
-- [x] `lib/utils/coordinate-converter.ts` - 좌표 변환 유틸리티 (KATEC → WGS84) ✅
-  - [x] `proj4` 라이브러리 설치 ✅ (katec-to-wgs84 대신 proj4 사용)
-  - [x] 좌표 변환 함수 구현 ✅
+- [x] `lib/utils/coordinate-converter.ts` - 좌표 변환 유틸리티 (KATEC 좌표 정규화) ✅
+  - [x] Naver Maps는 KATEC 좌표계 직접 지원 (변환 불필요) ✅
+  - [x] 정수형 좌표를 실수형으로 변환하는 함수 구현 ✅
 
 ### API 클라이언트
 
@@ -148,29 +148,129 @@
 
 ### 지도 연동 (MVP 2.2)
 
-- [x] `components/GoogleMap.tsx` ✅
-  - Guideline 준수: PascalCase 네이밍
-  - 동적 로딩: `next/dynamic` 활용 (필요할 때만 로드)
-  - Google Maps JavaScript API 로드
-  - 기본 지도 표시
-  - Spacing-First 정책 준수
-- [x] `hooks/useGoogleMap.ts` ✅
-  - 지도 초기화 및 상태 관리 훅
-  - 마커 관리 로직
-- [x] 좌표 변환 유틸리티 활용 (`lib/utils/coordinate-converter.ts`) ✅
-- [x] 관광지 마커 표시 ✅
-- [x] 마커 클릭 시 정보창(InfoWindow) ✅
-  - 관광지명, 간단한 설명, "상세보기" 버튼
-- [x] 리스트-지도 연동 ✅
-  - 리스트 항목 클릭 시 해당 마커로 지도 이동
-  - 리스트 항목 호버 시 해당 마커 강조 (선택 사항)
-- [x] 마커 클러스터링 ✅
-  - `@googlemaps/markerclusterer` 라이브러리 설치 및 활용
-- [x] 반응형 레이아웃 ✅
-  - 데스크톱: 리스트(좌측) + 지도(우측) 분할 레이아웃
-  - 모바일: 탭 형태로 리스트/지도 전환
-  - Spacing-First 정책: `gap` 사용
-- [x] 페이지 확인 및 인터랙션 테스트 ✅
+#### 환경 설정
+
+- [x] Naver Cloud Platform (NCP) Maps API Client ID 발급
+- [x] 환경변수 설정: `NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID` ✅
+- [x] Client ID 도메인 제한 설정 (보안 강화)
+- [x] `package.json`에 `@types/navermaps` 추가 ✅
+- [x] `@navermaps/marker-clusterer` 라이브러리 설치 (선택 사항, npm 패키지 없음 - 직접 구현 완료) ✅
+  - [x] `lib/utils/marker-clusterer.ts` 생성 ✅
+  - [x] 마커 클러스터링 로직 구현 ✅
+  - [x] MarkerClusterer 클래스 구현 ✅
+
+#### 지도 로더 구현
+
+- [x] `lib/utils/naver-map-loader.ts` 생성 ✅
+  - [x] Naver Maps JavaScript API 동적 로드 함수 ✅
+  - [x] 중복 로드 방지 로직 ✅
+  - [x] Promise 기반 비동기 로딩 ✅
+  - [x] API 초기화 완료 확인 (모든 필수 객체 체크) ✅
+  - [x] 에러 처리 (Client ID 오류, 네트워크 오류 등) ✅
+  - [x] 타임아웃 처리 (10초) ✅
+
+#### 지도 훅 구현
+
+- [x] `hooks/useNaverMap.ts` 생성 ✅
+  - [x] 지도 초기화 및 상태 관리 ✅
+  - [x] 지도 인스턴스 생성 및 관리 ✅
+  - [x] 마커 생성 및 관리 로직 ✅
+  - [x] 정보창(InfoWindow) 관리 ✅
+  - [x] 지도 중심 이동 함수 ✅
+  - [x] 마커 클릭 이벤트 처리 ✅
+  - [x] 로딩 상태 관리 ✅
+  - [x] 에러 상태 관리 ✅
+  - [x] 클린업 로직 (컴포넌트 unmount 시) ✅
+
+#### 지도 컴포넌트 구현
+
+- [x] `components/NaverMap.tsx` 생성 (홈페이지용 - 여러 마커) ✅
+
+  - [x] Guideline 준수: PascalCase 네이밍, `export default` ✅
+  - [x] 동적 로딩: `next/dynamic` 활용 (SSR 비활성화) ✅
+  - [x] `useNaverMap` 훅 연동 ✅
+  - [x] 관광지 목록을 마커로 표시 ✅
+  - [x] 마커 클릭 시 정보창 표시 ✅
+    - [x] 관광지명 ✅
+    - [x] 간단한 설명 ✅
+    - [x] "상세보기" 버튼 ✅
+  - [x] 선택된 마커 강조 기능 ✅
+  - [x] 마커 클러스터링 (선택 사항) ✅
+  - [x] Spacing-First 정책 준수 ✅
+  - [x] 로딩 상태 표시 (스켈레톤 또는 스피너) ✅
+  - [x] 에러 상태 표시 ✅
+
+- [x] `components/NaverMapSingle.tsx` 생성 (상세페이지용 - 단일 마커) ✅
+  - [x] Guideline 준수: PascalCase 네이밍, `export default` ✅
+  - [x] 동적 로딩: `next/dynamic` 활용 (SSR 비활성화) ✅
+  - [x] `useNaverMap` 훅 연동 ✅
+  - [x] 단일 관광지 위치 표시 ✅
+  - [x] Spacing-First 정책 준수 ✅
+  - [x] 로딩 상태 표시 ✅
+  - [x] 에러 상태 표시 ✅
+
+#### 좌표 변환 유틸리티
+
+- [x] `lib/utils/coordinate-converter.ts` 확인/업데이트 ✅
+  - [x] KATEC 좌표계 정수형 → 실수형 변환 ✅
+  - [x] 변환 함수: `mapx / 10000000`, `mapy / 10000000` ✅
+  - [x] Naver Maps 좌표 형식 변환 (경도, 위도 순서) ✅
+
+#### 지도-리스트 연동
+
+- [x] 리스트 항목 클릭 시 해당 마커로 지도 이동 ✅
+  - [x] `handleTourSelect` 함수 구현 ✅
+  - [x] 선택된 관광지 ID 상태 관리 ✅
+  - [x] 지도 중심 이동 (`moveToTour`) ✅
+  - [x] 정보창 표시 ✅
+- [x] 리스트 항목 호버 시 해당 마커 강조 (선택 사항) ✅
+  - [x] `handleTourHover` 함수 구현 ✅
+  - [x] 카드 스타일 변경 (임시 강조) ✅
+
+#### 반응형 레이아웃
+
+- [x] 데스크톱 레이아웃 (분할) ✅
+  - [x] 리스트(좌측) + 지도(우측) 그리드 레이아웃 ✅
+  - [x] 지도 고정 높이: `h-[calc(100vh-8rem)]` ✅
+  - [x] 지도 sticky 포지셔닝 ✅
+  - [x] Spacing-First 정책: `gap` 사용 ✅
+- [x] 모바일 레이아웃 (탭) ✅
+  - [x] 탭 형태로 리스트/지도 전환 ✅
+  - [x] 지도 최소 높이: 400px ✅
+  - [x] `Tabs` 컴포넌트 활용 (shadcn/ui) ✅
+
+#### 지도 컨트롤 (기본)
+
+- [ ] 줌 인/아웃 컨트롤
+  - [ ] 줌 컨트롤 표시 (`zoomControl: true`)
+  - [ ] 컨트롤 위치 설정 (`TOP_RIGHT`)
+- [ ] 지도 유형 선택 (선택 사항)
+  - [ ] 일반/위성/지형 지도 타입 전환
+  - [ ] `mapTypeControl` 활성화
+
+#### 추가 기능 (선택 사항)
+
+- [ ] 현재 위치로 이동 버튼
+  - [ ] Geolocation API 활용
+  - [ ] 사용자 위치 권한 요청
+  - [ ] 현재 위치 마커 표시
+- [ ] 마커 아이콘 커스터마이징
+  - [ ] 관광 타입별 아이콘 구분
+  - [ ] 커스텀 마커 이미지 사용
+- [ ] 전체화면 모드
+- [ ] 거리 측정 도구
+- [ ] 로드뷰 기능 (Street View)
+
+#### 테스트 및 검증
+
+- [ ] 지도 로딩 테스트 (정상 로드 확인)
+- [ ] 마커 표시 테스트 (여러 관광지)
+- [ ] 마커 클릭 이벤트 테스트
+- [ ] 리스트-지도 연동 테스트
+- [ ] 반응형 레이아웃 테스트 (모바일/데스크톱)
+- [ ] 에러 처리 테스트 (Client ID 오류, 네트워크 오류)
+- [ ] 성능 테스트 (많은 마커 처리)
+- [ ] API 사용량 모니터링 (Naver Cloud Platform Console)
 
 ### 정렬 & 페이지네이션
 
@@ -221,16 +321,49 @@
 
 ### 지도 섹션 (MVP 2.4.4)
 
-- [x] `components/tour-detail/TourDetailMap.tsx` ✅
-  - [x] Guideline 준수: PascalCase 네이밍 ✅
-  - [x] `GoogleMap` 컴포넌트 재사용 ✅
-  - [x] Spacing-First 정책 준수 ✅
-- [x] 해당 관광지 위치 표시 (마커 1개) ✅
-- [x] "길찾기" 버튼 ✅
-  - [x] Google Maps 길찾기 링크 생성 ✅
-- [x] "지도에서 보기" 버튼 ✅
-  - [x] Google Maps 웹/앱 연동 ✅
-- [x] 페이지 확인 (반응형 검증) ✅
+#### 기본 구현
+
+- [x] `components/tour-detail/TourDetailMap.tsx` - 외부 지도 링크만 제공 ✅
+  - [x] "길찾기" 버튼 (Naver Maps 길찾기 링크) ✅
+  - [x] "지도에서 보기" 버튼 (Naver Maps 웹/앱 연동) ✅
+  - [x] 주소 정보 표시 ✅
+
+#### 임베디드 지도 구현
+
+- [ ] `NaverMapSingle` 컴포넌트 연동
+  - [ ] `components/tour-detail/TourDetailMap.tsx`에 지도 표시 추가
+  - [ ] 동적 로딩: `next/dynamic` 활용
+  - [ ] 단일 관광지 위치 표시
+  - [ ] 마커 1개 표시
+  - [ ] 지도 크기: `aspect-square` 또는 고정 높이
+- [ ] 좌표 변환
+  - [ ] `detailCommon2` API에서 `mapx`, `mapy` 가져오기
+  - [ ] KATEC 좌표계 변환 (`coordinate-converter.ts` 활용)
+  - [ ] Naver Maps 좌표 형식으로 변환
+- [ ] 지도 컨트롤
+  - [ ] 줌 레벨 설정 (관광지 중심으로 적절한 줌)
+  - [ ] 줌 인/아웃 컨트롤 표시
+- [ ] 버튼 기능 유지
+  - [x] "길찾기" 버튼 (Naver Maps 길찾기 링크) ✅
+  - [x] "지도에서 보기" 버튼 (Naver Maps 웹/앱 연동) ✅
+
+#### 레이아웃 및 스타일링
+
+- [ ] 지도 섹션 레이아웃
+  - [ ] 주소 정보 + 지도 + 버튼 순서
+  - [ ] Spacing-First 정책 준수 (`gap` 사용)
+  - [ ] 반응형 디자인 (모바일/데스크톱)
+- [ ] 지도 컨테이너 스타일링
+  - [ ] 테두리 및 둥근 모서리
+  - [ ] 적절한 높이 설정
+  - [ ] 오버플로우 처리
+
+#### 테스트 및 검증
+
+- [ ] 상세페이지에서 지도 표시 확인
+- [ ] 마커 위치 정확도 확인
+- [ ] 버튼 동작 확인 (길찾기, 지도에서 보기)
+- [ ] 반응형 레이아웃 테스트
 
 ### 공유 기능 (MVP 2.4.5)
 
@@ -330,7 +463,7 @@
   - [x] 한국관광공사 이미지 도메인 허용 ✅
     - [x] `cdn.visitkorea.or.kr` ✅
     - [x] `tong.visitkorea.or.kr` ✅
-  - [ ] Google Maps 이미지 도메인 허용 필요 (향후 지도 기능 추가 시)
+  - [ ] Naver Maps 이미지 도메인 허용 (지도 기능 구현 시 필요)
 - [ ] `next/image` 사용 확인
   - 모든 이미지에 `Image` 컴포넌트 사용
   - `loading="lazy"` 설정
@@ -362,8 +495,8 @@
 
 - [ ] 동적 import 활용
   - `next/dynamic` 사용
-  - Google Maps 동적 로딩
   - 무거운 컴포넌트 lazy loading
+  - [ ] Naver Maps 동적 로딩 (`next/dynamic` 활용)
 - [ ] React Query 캐싱 전략
   - 적절한 `staleTime`, `cacheTime` 설정
   - Query Key 전략 수립
@@ -384,8 +517,8 @@
 ### 환경변수 보안 검증
 
 - [ ] API Key 도메인 제한 설정
-  - Google Maps API Key 제한
   - 한국관광공사 API Key 제한 (가능한 경우)
+  - [ ] Naver Maps Client ID 제한 (도메인 제한 설정 권장)
 - [ ] 환경변수 노출 확인
   - `NEXT_PUBLIC_` 접두사 확인
   - 민감한 정보는 서버 사이드만 사용
@@ -432,6 +565,15 @@
 
 ### 향후 개선 사항
 
+- [ ] 지도 기능 고도화 (기본 구현 완료 후)
+  - [ ] 현재 위치로 이동 버튼 (Geolocation API)
+  - [ ] 마커 아이콘 커스터마이징 (관광 타입별 구분)
+  - [ ] 전체화면 모드
+  - [ ] 거리 측정 도구
+  - [ ] 로드뷰 기능 (Street View)
+  - [ ] Geocoding API 연동 (주소 → 좌표 변환)
+  - [ ] Reverse Geocoding API 연동 (좌표 → 주소 변환)
+  - [ ] Directions API 연동 (경로 표시 및 길찾기)
 - [ ] 반려동물 정보 표시 (`detailPetTour2` API)
 - [ ] 리뷰/평점 시스템 (Supabase 활용)
 - [ ] 조회수 추적
@@ -447,15 +589,20 @@
 ### 필수 라이브러리 설치
 
 ```bash
-# 좌표 변환
-pnpm add katec-to-wgs84
+# Naver Maps 클러스터링 (선택 사항)
+pnpm add @navermaps/marker-clusterer
 
-# Google Maps 클러스터링
-pnpm add @googlemaps/markerclusterer
+# Naver Maps 타입 정의
+pnpm add -D @types/navermaps
 
 # 이미지 슬라이더 (선택)
 pnpm add swiper
 ```
+
+**참고**:
+
+- Naver Maps는 KATEC 좌표계를 직접 지원하므로 좌표 변환 라이브러리(`proj4`, `katec-to-wgs84`)가 불필요합니다.
+- 좌표 변환은 `lib/utils/coordinate-converter.ts`에서 정수형 → 실수형 변환만 수행합니다.
 
 ### shadcn/ui 컴포넌트 설치
 

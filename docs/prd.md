@@ -17,7 +17,7 @@
 ### 1.3 핵심 가치
 
 - **편리성**: 전국 관광지 정보를 한 곳에서 검색
-- **시각화**: Google 지도 연동으로 위치 기반 정보 제공
+- **시각화**: Naver 지도 연동으로 위치 기반 정보 제공
 - **상세성**: 운영시간, 요금, 이미지 등 종합 정보 제공
 
 ---
@@ -81,11 +81,11 @@
 
 ---
 
-### 2.2 Google 지도 연동
+### 2.2 Naver 지도 연동
 
 #### 기능 설명
 
-관광지 목록의 위치를 Google 지도에 마커로 표시하고, 사용자 인터랙션 제공
+관광지 목록의 위치를 Naver 지도에 마커로 표시하고, 사용자 인터랙션 제공
 
 #### 상세 요구사항
 
@@ -120,34 +120,36 @@
 
 #### 기술 요구사항
 
-- **Google Maps JavaScript API** 사용
+- **Naver Maps JavaScript API** 사용
 
-  - Google Cloud Platform (GCP) Maps API 사용
-  - API Key 방식 인증 (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
+  - Naver Cloud Platform (NCP) Maps API 사용
+  - Client ID 방식 인증 (`NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID`)
   - 필요한 API 라이브러리:
-    - `maps` (기본 지도)
-    - `marker` (마커 표시)
-    - `places` (장소 검색, 선택 사항)
-  - 클러스터링: `@googlemaps/markerclusterer` 라이브러리 활용 (선택 사항)
+    - 기본 지도 (naver.maps.Map)
+    - 마커 표시 (naver.maps.Marker)
+    - 정보창 (naver.maps.InfoWindow)
+  - 클러스터링: `@navermaps/marker-clusterer` 라이브러리 활용 (선택 사항)
 
 - **좌표 데이터 변환**: `mapx` (경도), `mapy` (위도)
 
   - 한국관광공사 API는 KATEC 좌표계, 정수형으로 저장
+  - Naver 지도는 KATEC 좌표계를 직접 지원하므로 변환 불필요
   - 변환 방법:
     1. 정수형 좌표를 실수형으로 변환: `mapx / 10000000`, `mapy / 10000000`
-    2. KATEC → WGS84 변환: `proj4` 라이브러리 활용 (EPSG:5181 → EPSG:4326)
-  - Google 지도는 WGS84 좌표계 사용 (위도, 경도 순서)
+    2. Naver Maps에 직접 사용 가능 (KATEC 좌표계 지원)
+  - Naver 지도는 KATEC 좌표계 사용 (경도, 위도 순서)
 
 - **API 제한사항**
 
-  - API Key는 도메인 제한 설정 권장
+  - Client ID는 도메인 제한 설정 권장
   - 일일 할당량 모니터링 필요
-  - Google Cloud Console에서 사용량 추적 및 알림 설정
+  - Naver Cloud Platform Console에서 사용량 추적 및 알림 설정
+  - 무료 할당량: 월 30,000회 지도 로드
 
 - **추가 기능 (선택 사항)**
-  - Places API 연동: 주변 시설 검색 (음식점, 주차장 등)
+  - Geocoding API: 주소 → 좌표 변환
+  - Reverse Geocoding API: 좌표 → 주소 변환
   - Directions API: 경로 표시 및 길찾기 기능
-  - Geocoding API: 주소 → 좌표 변환 (보완 데이터용)
 
 #### UI 요구사항
 
@@ -243,10 +245,10 @@
 ##### 2.4.4 지도 섹션
 
 - **표시 항목**
-  - 해당 관광지 위치를 Google 지도에 표시
+  - 해당 관광지 위치를 Naver 지도에 표시
   - 마커 1개 (해당 관광지)
-  - "길찾기" 버튼 → Google Maps 길찾기 링크 (웹/앱 연동)
-  - "지도에서 보기" 버튼 → Google Maps 웹/앱에서 열기
+  - "길찾기" 버튼 → Naver Maps 길찾기 링크 (웹/앱 연동)
+  - "지도에서 보기" 버튼 → Naver Maps 웹/앱에서 열기
   - 좌표 정보 표시 (선택 사항)
 
 ##### 2.4.5 추가 기능
@@ -332,7 +334,7 @@
   - 인라인 스타일 금지 (`style={{ }}` 사용 금지)
 - **UI Components**: shadcn/ui (Radix UI 기반)
 - **Icons**: lucide-react
-- **Maps**: Google Maps JavaScript API
+- **Maps**: Naver Maps JavaScript API
 - **State Management**: React Query (@tanstack/react-query) - 서버 상태
 - **Theme**: next-themes - 다크모드 지원
 
@@ -347,7 +349,7 @@
 ### 3.4 API
 
 - **한국관광공사 공공 API**: KorService2
-- **Google Maps API**: Maps JavaScript API
+- **Naver Maps API**: Maps JavaScript API
 
 ---
 
@@ -438,7 +440,7 @@ interface TourDetail {
 
 ### 5.3 좌표 변환
 
-한국관광공사 API는 KATEC 좌표계를 사용하며, Google 지도는 WGS84 좌표계를 사용합니다. 따라서 좌표 변환이 필요합니다.
+한국관광공사 API는 KATEC 좌표계를 사용하며, Naver 지도도 KATEC 좌표계를 직접 지원합니다. 따라서 좌표 변환이 불필요합니다.
 
 **좌표 변환 예시**:
 
@@ -447,25 +449,16 @@ interface TourDetail {
 const katecX = parseFloat(mapx) / 10000000; // 경도 (X)
 const katecY = parseFloat(mapy) / 10000000; // 위도 (Y)
 
-// 2. KATEC → WGS84 변환 (proj4 라이브러리 사용)
-import proj4 from "proj4";
-// 한국 TM 좌표계 (EPSG:5181) → WGS84 (EPSG:4326)
-// proj4는 [경도(X), 위도(Y)] 순서로 입력받습니다.
-const [wgs84Lng, wgs84Lat] = proj4(
-  "EPSG:5181", // 한국 2000 / Central Belt 2010 (KATEC)
-  "EPSG:4326", // WGS84
-  [katecX, katecY],
-);
-
-// 3. Google Maps에 사용 (위도, 경도 순서)
-const googleLatLng = { lat: wgs84Lat, lng: wgs84Lng };
+// 2. Naver Maps에 직접 사용 (KATEC 좌표계 지원)
+// Naver Maps는 KATEC 좌표계를 직접 지원하므로 변환 불필요
+const naverLatLng = new naver.maps.LatLng(katecY, katecX); // 위도, 경도 순서
 ```
 
 **참고**:
 
 - KATEC 좌표계: 한국 측지계 (TM 좌표계)
-- WGS84 좌표계: 세계 측지계 (Google Maps 표준)
-- 변환 라이브러리: `proj4` 사용 (EPSG:5181 → EPSG:4326)
+- Naver Maps는 KATEC 좌표계를 직접 지원하므로 별도 변환 라이브러리 불필요
+- 좌표 변환 라이브러리 (`proj4`) 사용 불필요
 
 ### 5.4 소개정보 응답 예시 (detailIntro2)
 
@@ -500,7 +493,7 @@ interface TourIntro {
 
 #### 네이밍 규칙 (Guideline 준수)
 
-- **컴포넌트 파일**: PascalCase (예: `TourCard.tsx`, `GoogleMap.tsx`)
+- **컴포넌트 파일**: PascalCase (예: `TourCard.tsx`, `NaverMap.tsx`)
 - **컴포넌트 네이밍**: `[Domain][Role][Variant]` 패턴
   - 예: `TourCard`, `TourList`, `TourFilter`, `TourDetailModal`
 - **훅 파일**: camelCase, `use` 접두사 (예: `useTourList.ts`, `useBookmark.ts`)
@@ -527,7 +520,7 @@ components/
 ├── TourList.tsx                # 관광지 목록
 ├── TourFilter.tsx              # 필터 (지역/타입)
 ├── TourSearch.tsx              # 검색창
-├── GoogleMap.tsx               # Google 지도
+├── NaverMap.tsx                # Naver 지도
 ├── tour-detail/
 │   ├── TourDetailInfo.tsx      # 기본정보
 │   ├── TourDetailIntro.tsx     # 운영정보
@@ -544,14 +537,14 @@ hooks/
 ├── useTourDetail.ts            # 관광지 상세 훅
 ├── useTourFilter.ts            # 필터링 로직 훅
 ├── useBookmark.ts              # 북마크 훅
-└── useGoogleMap.ts             # Google 지도 훅
+└── useNaverMap.ts              # Naver 지도 훅
 
 lib/
 ├── api/
 │   ├── tour-api.ts             # 한국관광공사 API 호출 함수들
 │   └── supabase-api.ts         # Supabase 쿼리 함수들 (북마크)
 ├── utils/
-│   ├── coordinate-converter.ts # 좌표 변환 유틸리티 (KATEC → WGS84)
+│   ├── coordinate-converter.ts # 좌표 변환 유틸리티 (KATEC 좌표 정규화)
 │   └── tour-transform.ts       # 관광지 데이터 변환 유틸리티
 └── types/
     ├── tour.ts                 # 관광지 타입 정의
@@ -663,27 +656,27 @@ function TourCardWrapper({ children }) {
 - **데이터 품질**: 일부 관광지는 이미지/정보 누락 가능
 - **응답 속도**: API 응답 시간 고려 (캐싱 전략 필요)
 
-### 8.2 Google 지도 제약사항
+### 8.2 Naver 지도 제약사항
 
-- **무료 할당량**: 월 $200 크레딧 (약 28,000회 지도 로드)
-- **API Key 필요**: Google Cloud Platform에서 발급 (신용카드 등록 필수)
+- **무료 할당량**: 월 30,000회 지도 로드
+- **Client ID 필요**: Naver Cloud Platform에서 발급 (무료 회원가입)
 - **필수 API 활성화**:
   - Maps JavaScript API
   - Maps Embed API (길찾기 링크용, 선택 사항)
-- **사용량 초과 시**: 청구 가능 (도메인 제한 설정 권장)
-- **좌표 변환**: KATEC → WGS84 변환 필요 (라이브러리 활용)
+- **사용량 초과 시**: 유료 플랜 전환 또는 사용량 제한 (도메인 제한 설정 권장)
+- **좌표 변환**: KATEC 좌표계 직접 지원 (변환 불필요)
 
 ### 8.3 DB 고려사항
 
 - 공공 API는 읽기 전용 → 리뷰/평점 등은 supabase DB 필요
 - Supabase 활용하여 북마크, 조회수, 랭킹 등 구현 가능
 
-### 8.4 Google Maps API 고급 설정
+### 8.4 Naver Maps API 고급 설정
 
-- **API Key 제한 설정**:
+- **Client ID 제한 설정**:
 
   - HTTP 리퍼러 제한: 특정 도메인에서만 API 사용 가능하도록 설정
-  - API 키 제한: Maps JavaScript API만 허용하도록 설정
+  - 서비스 URL 제한: Maps JavaScript API만 허용하도록 설정
   - IP 주소 제한 (선택 사항): 개발 환경용
 
 - **성능 최적화**:
@@ -693,7 +686,7 @@ function TourCardWrapper({ children }) {
   - 지도 재사용: 동일한 지도 인스턴스 재사용
 
 - **에러 처리**:
-  - API Key 오류: 사용자 친화적 메시지 표시
+  - Client ID 오류: 사용자 친화적 메시지 표시
   - 할당량 초과: 사용량 모니터링 및 알림 설정
   - 네트워크 오류: 재시도 로직 구현
 
@@ -701,7 +694,7 @@ function TourCardWrapper({ children }) {
 
 - API 키는 환경변수로 관리 (`.env`)
 - `NEXT_PUBLIC_` 접두사로 클라이언트 노출 허용
-- Google Maps API Key는 도메인 제한 설정 필수 (보안 강화)
+- Naver Maps Client ID는 도메인 제한 설정 필수 (보안 강화)
 
 **필수 환경변수**:
 
@@ -712,8 +705,8 @@ NEXT_PUBLIC_TOUR_API_KEY=your_tour_api_key
 # 한국 관광공사 에러가 난다면? NEXT_PUBLIC_TOUR_API_KEY 가 인식안될때?
 TOUR_API_KEY=your_tour_api_key
 
-# Google Maps
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+# Naver Maps
+NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID=your_naver_maps_client_id
 
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_key
@@ -752,7 +745,7 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 - [ ] API 클라이언트 구현 (`app/api/tour/route.ts`)
 - [ ] 기본 타입 정의 (`lib/types/tour.ts`, `lib/types/bookmark.ts`)
 - [ ] 좌표 변환 유틸리티 구현 (`lib/utils/coordinate-converter.ts`)
-- [ ] Google Maps API Key 환경변수 설정
+- [ ] Naver Maps Client ID 환경변수 설정
 - [ ] 레이아웃 구조 업데이트 (`app/layout.tsx`)
   - React Query Provider 설정
   - Theme Provider 설정 (next-themes)
@@ -801,16 +794,16 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 
 #### 2.5 지도 연동 (MVP 2.2)
 
-- [ ] `components/GoogleMap.tsx` (기본 지도 표시)
+- [ ] `components/NaverMap.tsx` (기본 지도 표시)
   - Guideline 준수: PascalCase 네이밍
   - 동적 로딩: `next/dynamic` 활용 (필요할 때만 로드)
-- [ ] `hooks/useGoogleMap.ts` (지도 초기화 및 상태 관리 훅)
-- [ ] Google Maps JavaScript API 로드
+- [ ] `hooks/useNaverMap.ts` (지도 초기화 및 상태 관리 훅)
+- [ ] Naver Maps JavaScript API 로드
 - [ ] 좌표 변환 유틸리티 활용 (`lib/utils/coordinate-converter.ts`)
 - [ ] 관광지 마커 표시
 - [ ] 마커 클릭 시 정보창(InfoWindow)
 - [ ] 리스트-지도 연동 (클릭/호버)
-- [ ] 마커 클러스터링 (`@googlemaps/markerclusterer` 라이브러리)
+- [ ] 마커 클러스터링 (`@navermaps/marker-clusterer` 라이브러리)
 - [ ] 반응형 레이아웃 (데스크톱: 분할, 모바일: 탭)
   - Spacing-First 정책: `gap` 사용
 - [ ] 페이지 확인 및 인터랙션 테스트
@@ -850,10 +843,10 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 
 - [ ] `components/tour-detail/TourDetailMap.tsx`
   - Guideline 준수: PascalCase 네이밍
-  - `GoogleMap` 컴포넌트 재사용
+  - `NaverMap` 컴포넌트 재사용
 - [ ] 해당 관광지 위치 표시 (마커 1개)
-- [ ] "길찾기" 버튼 (Google Maps 길찾기 링크)
-- [ ] "지도에서 보기" 버튼 (Google Maps 웹/앱 연동)
+- [ ] "길찾기" 버튼 (Naver Maps 길찾기 링크)
+- [ ] "지도에서 보기" 버튼 (Naver Maps 웹/앱 연동)
 - [ ] 페이지 확인 (반응형 검증)
 
 #### 3.4 공유 기능 (MVP 2.4.5)
@@ -951,9 +944,8 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 ### 기술 문서
 
 - Next.js: https://nextjs.org/docs
-- Google Maps JavaScript API: https://developers.google.com/maps/documentation/javascript
-- Google Maps Marker Clustering: https://github.com/googlemaps/js-marker-clusterer
-- proj4 (좌표 변환): https://www.npmjs.com/package/proj4
+- Naver Maps JavaScript API: https://navermaps.github.io/maps.js.ncp/
+- Naver Maps Marker Clustering: https://github.com/navermaps/marker-clusterer
 - Tailwind CSS: https://tailwindcss.com/docs
 - shadcn/ui: https://ui.shadcn.com/
 

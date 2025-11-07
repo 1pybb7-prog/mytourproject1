@@ -11,14 +11,14 @@
  *
  * 좌표 정보:
  * - mapx, mapy는 KATEC 좌표계의 정수형 값
- * - Google Maps 사용 시 WGS84 좌표계로 변환 필요
+ * - Naver Maps는 KATEC 좌표계를 직접 지원하므로 변환 불필요
  *
  * @see {@link /docs/prd.md#5-데이터-구조} - PRD 문서의 데이터 구조 섹션
  */
 
 /**
  * 관광지 목록 항목 타입
- * 
+ *
  * areaBasedList2 API 응답 데이터 구조
  */
 export interface TourItem {
@@ -56,7 +56,7 @@ export interface TourItem {
 
 /**
  * 관광지 상세 정보 타입
- * 
+ *
  * detailCommon2 API 응답 데이터 구조
  */
 export interface TourDetail {
@@ -90,9 +90,9 @@ export interface TourDetail {
 
 /**
  * 관광지 소개 정보 타입
- * 
+ *
  * detailIntro2 API 응답 데이터 구조
- * 
+ *
  * 주의: 관광 타입(contenttypeid)에 따라 사용 가능한 필드가 다릅니다.
  * 예를 들어, 관광지(12)와 음식점(39)의 필드가 다를 수 있습니다.
  */
@@ -124,4 +124,3 @@ export interface TourIntro {
   /** 기타 정보 (타입별로 다름) */
   [key: string]: string | undefined;
 }
-

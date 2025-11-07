@@ -24,18 +24,20 @@ import { cn } from "@/lib/utils";
 
 interface TourCardProps {
   tour: TourItem;
+  isSelected?: boolean; // 선택된 상태
+  isHovered?: boolean; // 호버된 상태
+  onSelect?: (tour: TourItem) => void; // 선택 핸들러
+  onHover?: (tourId: string | undefined) => void; // 호버 핸들러
   className?: string;
-  /** 관광지 선택 핸들러 (지도 연동용) */
-  onTourSelect?: (tourId: string) => void;
-  /** 호버 시 마커 강조 핸들러 (지도 연동용) */
-  onTourHover?: (tourId: string) => void;
 }
 
 export default function TourCard({
   tour,
+  isSelected = false,
+  isHovered = false,
+  onSelect,
+  onHover,
   className,
-  onTourSelect,
-  onTourHover,
 }: TourCardProps) {
   const imageUrl = tour.firstimage || tour.firstimage2;
   const hasImage = Boolean(imageUrl);
@@ -43,37 +45,54 @@ export default function TourCard({
   const detailUrl = `/places/${tour.contentid}`;
 
   /**
-   * 클릭 핸들러 (지도 연동)
+   * 카드 클릭 핸들러
+   * 지도 이동 기능이 있는 경우 지도로 이동하고, 기본 링크 동작은 유지
    */
-  const handleClick = () => {
-    if (onTourSelect) {
-      onTourSelect(tour.contentid);
-      console.log("[TourCard] 관광지 선택:", tour.contentid);
+  const handleCardClick = () => {
+    // 지도 이동 기능이 있는 경우
+    if (onSelect) {
+      console.log("[TourCard] 카드 클릭:", tour.title);
+      onSelect(tour);
+      // 기본 링크 동작은 유지 (상세페이지로 이동)
+      // 지도 이동은 NaverMap 컴포넌트에서 처리됨
     }
   };
 
   /**
-   * 호버 핸들러 (마커 강조)
+   * 카드 호버 핸들러
    */
-  const handleMouseEnter = () => {
-    if (onTourHover) {
-      onTourHover(tour.contentid);
-      console.log("[TourCard] 관광지 호버:", tour.contentid);
+  const handleCardMouseEnter = () => {
+    if (onHover) {
+      console.log("[TourCard] 카드 호버:", tour.contentid);
+      onHover(tour.contentid);
+    }
+  };
+
+  /**
+   * 카드 호버 아웃 핸들러
+   */
+  const handleCardMouseLeave = () => {
+    if (onHover) {
+      console.log("[TourCard] 카드 호버 아웃");
+      onHover(undefined);
     }
   };
 
   return (
     <Link
       href={detailUrl}
-      onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
+      onClick={handleCardClick}
+      onMouseEnter={handleCardMouseEnter}
+      onMouseLeave={handleCardMouseLeave}
       className={cn(
         "group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
+        isSelected && "ring-2 ring-primary ring-offset-2",
+        isHovered && "ring-2 ring-primary/50 ring-offset-1",
         className,
       )}
     >
       {/* 이미지 영역 */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-square w-full overflow-hidden bg-muted">
         {hasImage ? (
           <Image
             src={imageUrl}
