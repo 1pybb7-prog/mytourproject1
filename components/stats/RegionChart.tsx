@@ -54,12 +54,27 @@ interface RegionChartProps {
 }
 
 /**
+ * 차트 색상 팔레트 (카테고리별로 다른 색상 적용)
+ * CSS 변수를 직접 사용 (oklch 형식)
+ */
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+];
+
+/**
  * 차트 설정
  */
 const chartConfig: ChartConfig = {
   count: {
     label: "관광지 개수",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
@@ -74,7 +89,7 @@ function RegionChartSkeleton() {
         <Skeleton className="h-4 w-48" />
       </CardHeader>
       <CardContent>
-        <Skeleton className="h-[300px] w-full" />
+        <Skeleton className="h-[600px] w-full" />
       </CardContent>
     </Card>
   );
@@ -110,7 +125,7 @@ export default function RegionChart({
           <CardDescription>지역별 관광지 개수를 확인하세요</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center">
+          <div className="flex h-[600px] items-center justify-center">
             <p className="text-sm text-muted-foreground">데이터가 없습니다</p>
           </div>
         </CardContent>
@@ -118,12 +133,21 @@ export default function RegionChart({
     );
   }
 
-  // 차트 데이터 준비 (상위 10개 지역만 표시)
-  const chartData = data.slice(0, 10).map((region) => ({
+  // 차트 데이터 준비 (상위 10개 지역만 표시, 각 지역별로 다른 색상 적용)
+  const chartData = data.slice(0, 10).map((region, index) => ({
     name: region.name,
     count: region.count,
     areacode: region.areacode,
+    color: CHART_COLORS[index % CHART_COLORS.length],
   }));
+
+  console.log(
+    "[RegionChart] 차트 데이터 색상:",
+    chartData.map((item) => ({
+      name: item.name,
+      color: item.color,
+    })),
+  );
 
   /**
    * 바 클릭 핸들러
@@ -151,6 +175,44 @@ export default function RegionChart({
     return label;
   };
 
+  /**
+   * 커스텀 바 렌더러
+   * 각 바마다 다른 색상을 적용하고 호버 효과 추가
+   */
+  const renderCustomBar = (props: any) => {
+    const { payload, x, y, width, height } = props;
+    const color = payload.color || CHART_COLORS[0];
+
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={color}
+        rx={4}
+        style={{
+          cursor: "pointer",
+          transition: "opacity 0.2s ease, filter 0.2s ease",
+        }}
+        onClick={() => {
+          handleBarClick({
+            areacode: payload.areacode,
+            name: payload.name,
+          });
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.85";
+          e.currentTarget.style.filter = "brightness(1.15) saturate(1.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "1";
+          e.currentTarget.style.filter = "brightness(1) saturate(1)";
+        }}
+      />
+    );
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       <Card>
@@ -161,14 +223,14 @@ export default function RegionChart({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ChartContainer config={chartConfig} className="h-[600px] w-full">
             <BarChart
               data={chartData}
               margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 60,
+                top: 40,
+                right: 60,
+                left: 40,
+                bottom: 120,
               }}
               accessibilityLayer
               role="img"
@@ -198,20 +260,7 @@ export default function RegionChart({
               />
               <Bar
                 dataKey="count"
-                fill="hsl(var(--chart-1))"
-                radius={[4, 4, 0, 0]}
-                onClick={(data) => {
-                  const regionData = chartData.find(
-                    (item) => item.name === data.name,
-                  );
-                  if (regionData) {
-                    handleBarClick({
-                      areacode: regionData.areacode,
-                      name: regionData.name,
-                    });
-                  }
-                }}
-                style={{ cursor: "pointer" }}
+                shape={renderCustomBar}
                 role="button"
                 aria-label="지역별 관광지 개수 바"
               />
