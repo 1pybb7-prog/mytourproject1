@@ -124,26 +124,19 @@ export default function Home() {
   };
 
   /**
-   * 관광지 선택 핸들러
-   * 리스트 항목 클릭 시 해당 마커로 지도 이동
-   */
-  const handleTourSelect = (tour: TourItem) => {
-    console.log("[Home] 관광지 선택:", tour.title, tour.contentid);
-    setSelectedTourId(tour.contentid);
-    // 선택된 관광지로 스크롤 (모바일에서 유용)
-    const element = document.getElementById(`tour-${tour.contentid}`);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-
-  /**
    * 관광지 호버 핸들러
-   * 리스트 항목 호버 시 해당 마커 강조 (선택 사항)
+   * 리스트 항목 호버 시 지도에 위치 표시
    */
   const handleTourHover = (tourId: string | undefined) => {
     console.log("[Home] 관광지 호버:", tourId);
     setHoveredTourId(tourId);
+    // 호버 시 지도에 위치 표시
+    if (tourId) {
+      setSelectedTourId(tourId);
+    } else {
+      // 호버 아웃 시 선택 해제 (선택 사항)
+      // setSelectedTourId(undefined);
+    }
   };
 
   return (
@@ -214,7 +207,6 @@ export default function Home() {
                 sortOption={sortOption}
                 selectedTourId={selectedTourId}
                 hoveredTourId={hoveredTourId}
-                onTourSelect={handleTourSelect}
                 onTourHover={handleTourHover}
               />
               {/* 페이지네이션 */}
@@ -232,7 +224,6 @@ export default function Home() {
               <NaverMap
                 tours={tours}
                 selectedTourId={selectedTourId}
-                onTourSelect={handleTourSelect}
                 height="min-h-[400px]"
                 enableClustering={true}
               />
@@ -241,9 +232,9 @@ export default function Home() {
         </div>
 
         {/* 데스크톱: 리스트(좌측) + 지도(우측) 그리드 레이아웃 */}
-        <div className="hidden lg:flex lg:flex-row lg:gap-6">
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
           {/* 리스트 뷰 (좌측 50%) */}
-          <div className="flex flex-1 flex-col gap-6">
+          <div className="flex flex-col gap-6 overflow-y-auto lg:max-h-[calc(100vh-8rem)]">
             <TourList
               keyword={searchKeyword}
               areaCode={filters.areaCode}
@@ -253,7 +244,6 @@ export default function Home() {
               sortOption={sortOption}
               selectedTourId={selectedTourId}
               hoveredTourId={hoveredTourId}
-              onTourSelect={handleTourSelect}
               onTourHover={handleTourHover}
             />
             {/* 페이지네이션 */}
@@ -268,14 +258,24 @@ export default function Home() {
           </div>
 
           {/* 지도 뷰 (우측 50%, sticky 포지셔닝) */}
-          <div className="flex flex-1 flex-col lg:sticky lg:top-[8rem] lg:h-[calc(100vh-8rem)]">
-            <NaverMap
-              tours={tours}
-              selectedTourId={selectedTourId}
-              onTourSelect={handleTourSelect}
-              height="h-[calc(100vh-8rem)]"
-              enableClustering={true}
-            />
+          <div className="flex flex-col lg:sticky lg:top-[8rem] lg:h-[calc(100vh-8rem)]">
+            {selectedTourId ? (
+              <NaverMap
+                tours={tours.filter(
+                  (tour) => tour.contentid === selectedTourId,
+                )}
+                selectedTourId={selectedTourId}
+                height="h-[calc(100vh-8rem)]"
+                enableClustering={false}
+              />
+            ) : (
+              <NaverMap
+                tours={tours}
+                selectedTourId={selectedTourId}
+                height="h-[calc(100vh-8rem)]"
+                enableClustering={true}
+              />
+            )}
           </div>
         </div>
       </section>

@@ -26,7 +26,6 @@ interface TourCardProps {
   tour: TourItem;
   isSelected?: boolean; // 선택된 상태
   isHovered?: boolean; // 호버된 상태
-  onSelect?: (tour: TourItem) => void; // 선택 핸들러
   onHover?: (tourId: string | undefined) => void; // 호버 핸들러
   className?: string;
 }
@@ -35,7 +34,6 @@ export default function TourCard({
   tour,
   isSelected = false,
   isHovered = false,
-  onSelect,
   onHover,
   className,
 }: TourCardProps) {
@@ -45,21 +43,8 @@ export default function TourCard({
   const detailUrl = `/places/${tour.contentid}`;
 
   /**
-   * 카드 클릭 핸들러
-   * 지도 이동 기능이 있는 경우 지도로 이동하고, 기본 링크 동작은 유지
-   */
-  const handleCardClick = () => {
-    // 지도 이동 기능이 있는 경우
-    if (onSelect) {
-      console.log("[TourCard] 카드 클릭:", tour.title);
-      onSelect(tour);
-      // 기본 링크 동작은 유지 (상세페이지로 이동)
-      // 지도 이동은 NaverMap 컴포넌트에서 처리됨
-    }
-  };
-
-  /**
    * 카드 호버 핸들러
+   * 호버 시 지도에 위치 표시
    */
   const handleCardMouseEnter = () => {
     if (onHover) {
@@ -78,18 +63,20 @@ export default function TourCard({
     }
   };
 
+  const cardClassName = cn(
+    "group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
+    isSelected && "ring-2 ring-primary ring-offset-2",
+    isHovered && "ring-2 ring-primary/50 ring-offset-1",
+    className,
+  );
+
+  // 항상 Link로 렌더링하여 클릭 시 상세페이지로 이동
   return (
     <Link
       href={detailUrl}
-      onClick={handleCardClick}
       onMouseEnter={handleCardMouseEnter}
       onMouseLeave={handleCardMouseLeave}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
-        isSelected && "ring-2 ring-primary ring-offset-2",
-        isHovered && "ring-2 ring-primary/50 ring-offset-1",
-        className,
-      )}
+      className={cardClassName}
     >
       {/* 이미지 영역 */}
       <div className="relative aspect-square w-full overflow-hidden bg-muted">

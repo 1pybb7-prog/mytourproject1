@@ -36,7 +36,6 @@ interface TourListProps {
   sortOption?: SortOption; // 정렬 옵션
   selectedTourId?: string; // 선택된 관광지 ID
   hoveredTourId?: string; // 호버된 관광지 ID
-  onTourSelect?: (tour: TourItem) => void; // 관광지 선택 핸들러
   onTourHover?: (tourId: string | undefined) => void; // 관광지 호버 핸들러
   className?: string;
 }
@@ -104,7 +103,6 @@ export default function TourList({
   sortOption = "latest",
   selectedTourId,
   hoveredTourId,
-  onTourSelect,
   onTourHover,
   className,
 }: TourListProps) {
@@ -178,7 +176,7 @@ export default function TourList({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2",
+        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-1",
         className,
       )}
     >
@@ -188,7 +186,6 @@ export default function TourList({
             tour={tour}
             isSelected={selectedTourId === tour.contentid}
             isHovered={hoveredTourId === tour.contentid}
-            onSelect={onTourSelect}
             onHover={onTourHover}
           />
         </div>
