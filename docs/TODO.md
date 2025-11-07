@@ -24,6 +24,7 @@
   - [x] `TourItem` 인터페이스 ✅
   - [x] `TourDetail` 인터페이스 ✅
   - [x] `TourIntro` 인터페이스 ✅
+  - [ ] `PetTourInfo` 인터페이스 (MVP 2.5) - 반려동물 동반 정보 타입
 - [x] `lib/types/bookmark.ts` - 북마크 타입 정의 ✅
 - [x] `lib/utils/coordinate-converter.ts` - 좌표 변환 유틸리티 (KATEC 좌표 정규화) ✅
   - [x] Naver Maps는 KATEC 좌표계 직접 지원 (변환 불필요) ✅
@@ -38,6 +39,7 @@
   - [x] `getDetailCommon` - 공통 정보 조회 ✅
   - [x] `getDetailIntro` - 소개 정보 조회 ✅
   - [x] `getDetailImage` - 이미지 조회 ✅
+  - [ ] `getDetailPetTour` - 반려동물 동반 정보 조회 (MVP 2.5)
 - [x] `lib/api/supabase-api.ts` - Supabase 쿼리 함수들 (북마크) ✅
   - [x] 북마크 추가/삭제 함수 ✅
   - [x] 북마크 목록 조회 함수 ✅
@@ -78,7 +80,7 @@
 
 ## Phase 2: 홈페이지 (`/`) - 관광지 목록
 
-### 📊 진행 상황: 5% 완료
+### 📊 진행 상황: 80% 완료
 
 ### 페이지 기본 구조
 
@@ -131,6 +133,19 @@
 - [x] 필터 동작 연결 ✅
 - [x] 필터링된 결과 표시 ✅
 - [x] 페이지 확인 및 UX 개선 ✅
+
+### 반려동물 동반 여행 필터 (MVP 2.5)
+
+- [ ] 반려동물 필터 추가
+  - [ ] "반려동물 동반 가능" 토글 필터
+  - [ ] 반려동물 크기별 필터 (소형, 중형, 대형)
+  - [ ] 반려동물 종류별 필터 (개, 고양이 등)
+  - [ ] 실내/실외 동반 가능 여부 필터
+- [ ] `components/TourFilter.tsx`에 반려동물 필터 UI 추가
+- [ ] 필터 로직 연동
+- [ ] 반려동물 가능 관광지 카드에 🐾 아이콘 표시
+- [ ] 크기 제한 뱃지 표시 (예: "소형견 OK")
+- [ ] 페이지 확인 및 UX 개선
 
 ### 검색 기능 (MVP 2.3)
 
@@ -287,7 +302,7 @@
 
 ## Phase 3: 상세페이지 (`/places/[contentId]`)
 
-### 📊 진행 상황: 50% 완료
+### 📊 진행 상황: 70% 완료
 
 ### 페이지 기본 구조
 
@@ -392,9 +407,111 @@
 - [x] `detailImage2` API 연동 ✅
 - [ ] 페이지 확인 (반응형 검증)
 
+### 반려동물 정보 섹션 (MVP 2.5)
+
+- [ ] `components/tour-detail/TourDetailPetTour.tsx` 생성
+  - [ ] Guideline 준수: PascalCase 네이밍
+  - [ ] `detailPetTour2` API 연동
+  - [ ] 반려동물 동반 가능 여부 표시
+  - [ ] 반려동물 크기/종류 제한 정보 표시
+  - [ ] 추가 요금 및 시설 정보 표시
+  - [ ] 주차장 정보 (반려동물 하차 공간)
+  - [ ] 산책로 정보
+  - [ ] 반려동물 배변 봉투 제공 여부
+  - [ ] 반려동물 음수대 위치
+  - [ ] 아이콘 및 뱃지 디자인 (🐾 아이콘)
+  - [ ] Spacing-First 정책 준수
+- [ ] 상세페이지에 반려동물 정보 섹션 추가
+- [ ] 페이지 확인 및 스타일링 (반응형 검증)
+
 ---
 
-## Phase 4: 북마크 페이지 (`/bookmarks`) - 선택 사항
+## Phase 4: 통계 대시보드 페이지 (`/stats`)
+
+### 📊 진행 상황: 0% 완료
+
+### 페이지 기본 구조
+
+- [ ] `app/stats/page.tsx` 생성
+  - [ ] Next.js 15: `await params` 사용 (필요시)
+  - [ ] `generateMetadata` 함수로 SEO 최적화
+  - [ ] 기본 레이아웃 구조 (헤더, 섹션 구분)
+  - [ ] 반응형 레이아웃 설정 (모바일 우선)
+  - [ ] Spacing-First 정책 준수
+
+### 타입 정의
+
+- [ ] `lib/types/stats.ts` 생성
+  - [ ] `RegionStats` 인터페이스 (지역별 통계)
+  - [ ] `TypeStats` 인터페이스 (타입별 통계)
+  - [ ] `StatsSummary` 인터페이스 (통계 요약)
+
+### 통계 데이터 수집
+
+- [ ] `lib/api/stats-api.ts` 생성
+  - [ ] `getRegionStats()` - 지역별 관광지 개수 집계
+  - [ ] `getTypeStats()` - 타입별 관광지 개수 집계
+  - [ ] `getStatsSummary()` - 전체 통계 요약
+  - [ ] 병렬 API 호출로 성능 최적화
+  - [ ] 에러 처리 및 재시도 로직
+  - [ ] 데이터 캐싱 설정 (revalidate: 3600)
+
+### 통계 요약 카드
+
+- [ ] `components/stats/StatsSummary.tsx` 생성
+  - [ ] Guideline 준수: PascalCase 네이밍
+  - [ ] 전체 관광지 수 표시
+  - [ ] Top 3 지역 표시
+  - [ ] Top 3 타입 표시
+  - [ ] 마지막 업데이트 시간 표시
+  - [ ] 카드 레이아웃 디자인
+  - [ ] Spacing-First 정책 준수
+  - [ ] 로딩 상태 (Skeleton UI)
+  - [ ] 다크/라이트 모드 지원
+
+### 지역별 분포 차트 (Bar Chart)
+
+- [ ] `components/stats/RegionChart.tsx` 생성
+  - [ ] Guideline 준수: PascalCase 네이밍
+  - [ ] shadcn/ui Chart 컴포넌트 설치 (Bar)
+  - [ ] recharts 기반 Bar Chart 구현
+  - [ ] X축: 지역명, Y축: 관광지 개수
+  - [ ] 바 클릭 시 해당 지역 목록 페이지로 이동
+  - [ ] 호버 시 정확한 개수 표시
+  - [ ] 다크/라이트 모드 지원
+  - [ ] 반응형 디자인
+  - [ ] 로딩 상태
+  - [ ] 접근성 (ARIA 라벨, 키보드 네비게이션)
+
+### 타입별 분포 차트 (Donut Chart)
+
+- [ ] `components/stats/TypeChart.tsx` 생성
+  - [ ] Guideline 준수: PascalCase 네이밍
+  - [ ] shadcn/ui Chart 컴포넌트 설치 (Pie/Donut)
+  - [ ] recharts 기반 Donut Chart 구현
+  - [ ] 타입별 비율 및 개수 표시
+  - [ ] 섹션 클릭 시 해당 타입 목록 페이지로 이동
+  - [ ] 호버 시 타입명, 개수, 비율 표시
+  - [ ] 다크/라이트 모드 지원
+  - [ ] 반응형 디자인
+  - [ ] 로딩 상태
+  - [ ] 접근성 (ARIA 라벨)
+
+### 페이지 통합 및 최적화
+
+- [ ] `app/stats/page.tsx`에 모든 컴포넌트 통합
+  - [ ] 통계 요약 카드 (상단)
+  - [ ] 지역별 분포 차트 (중단)
+  - [ ] 타입별 분포 차트 (하단)
+- [ ] Server Component로 구현
+- [ ] 데이터 캐싱 설정 (revalidate: 3600)
+- [ ] 에러 처리 (에러 메시지 + 재시도 버튼)
+- [ ] 네비게이션에 통계 페이지 링크 추가
+- [ ] 최종 페이지 확인 (반응형 검증)
+
+---
+
+## Phase 5: 북마크 페이지 (`/bookmarks`) - 선택 사항
 
 ### 📊 진행 상황: 30% 완료
 
@@ -454,7 +571,7 @@
 
 ---
 
-## Phase 5: 최적화 & 배포
+## Phase 6: 최적화 & 배포
 
 ### 📊 진행 상황: 10% 완료
 
@@ -576,7 +693,6 @@
   - [ ] Geocoding API 연동 (주소 → 좌표 변환)
   - [ ] Reverse Geocoding API 연동 (좌표 → 주소 변환)
   - [ ] Directions API 연동 (경로 표시 및 길찾기)
-- [ ] 반려동물 정보 표시 (`detailPetTour2` API)
 - [ ] 리뷰/평점 시스템 (Supabase 활용)
 - [ ] 조회수 추적
 - [ ] 인기 관광지 랭킹
@@ -617,6 +733,7 @@ pnpx shadcn@latest add radio-group
 pnpx shadcn@latest add skeleton
 pnpx shadcn@latest add toast
 pnpx shadcn@latest add pagination
+pnpx shadcn@latest add chart  # 통계 대시보드용 (Phase 4)
 ```
 
 ### 개발 시 주의사항

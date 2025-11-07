@@ -124,3 +124,29 @@ export interface TourIntro {
   /** 기타 정보 (타입별로 다름) */
   [key: string]: string | undefined;
 }
+
+/**
+ * 반려동물 동반 여행 정보 타입
+ *
+ * detailPetTour2 API 응답 데이터 구조
+ *
+ * @see {@link /docs/prd.md#25-반려동물-동반-여행} - PRD 문서의 반려동물 동반 여행 섹션
+ */
+export interface PetTourInfo {
+  /** 콘텐츠ID (고유 식별자) */
+  contentid: string;
+  /** 콘텐츠타입ID (관광 타입: 12, 14, 15, 25, 28, 32, 38, 39) */
+  contenttypeid: string;
+  /** 애완동물 동반 여부 */
+  chkpetleash?: string;
+  /** 애완동물 크기 */
+  chkpetsize?: string;
+  /** 입장 가능 장소 (실내/실외) */
+  chkpetplace?: string;
+  /** 추가 요금 */
+  chkpetfee?: string;
+  /** 기타 반려동물 정보 */
+  petinfo?: string;
+  /** 주차장 정보 */
+  parking?: string;
+}

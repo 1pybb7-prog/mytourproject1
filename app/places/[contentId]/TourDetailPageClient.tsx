@@ -7,9 +7,11 @@ import TourDetailInfo from "@/components/tour-detail/TourDetailInfo";
 import TourDetailMap from "@/components/tour-detail/TourDetailMap";
 import TourDetailIntro from "@/components/tour-detail/TourDetailIntro";
 import TourDetailGallery from "@/components/tour-detail/TourDetailGallery";
+import TourDetailPetTour from "@/components/tour-detail/TourDetailPetTour";
 import { useTourDetail } from "@/hooks/useTourDetail";
 import { useTourIntro } from "@/hooks/useTourIntro";
 import { useTourImages } from "@/hooks/useTourImages";
+import { useTourPet } from "@/hooks/useTourPet";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -36,6 +38,7 @@ export default function TourDetailPageClient({
     detail?.contenttypeid || "",
   );
   const { data: images, isLoading: isLoadingImages } = useTourImages(contentId);
+  const { data: petInfo, isLoading: isLoadingPetInfo } = useTourPet(contentId);
 
   if (isLoading) {
     return (
@@ -101,6 +104,7 @@ export default function TourDetailPageClient({
           <div className="flex flex-col gap-12">
             <TourDetailInfo detail={detail} />
             <TourDetailIntro intro={intro} isLoading={isLoadingIntro} />
+            <TourDetailPetTour petInfo={petInfo} isLoading={isLoadingPetInfo} />
             <TourDetailGallery
               images={images || []}
               isLoading={isLoadingImages}

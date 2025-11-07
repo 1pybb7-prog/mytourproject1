@@ -11,6 +11,7 @@
  * 4. 공통 정보 조회 (detailCommon2)
  * 5. 소개 정보 조회 (detailIntro2)
  * 6. 이미지 조회 (detailImage2)
+ * 7. 반려동물 동반 여행 정보 조회 (detailPetTour2)
  *
  * API 기본 정보:
  * - Base URL: https://apis.data.go.kr/B551011/KorService2
@@ -19,7 +20,12 @@
  * @see {@link /docs/prd.md#4-api-명세} - PRD 문서의 API 명세 섹션
  */
 
-import type { TourItem, TourDetail, TourIntro } from "@/lib/types/tour";
+import type {
+  TourItem,
+  TourDetail,
+  TourIntro,
+  PetTourInfo,
+} from "@/lib/types/tour";
 
 /**
  * API Base URL
@@ -46,6 +52,24 @@ function getServiceKey(): string {
   if (!key) {
     throw new Error(
       "TOUR_API_KEY 환경변수가 설정되지 않았습니다. NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY를 설정해주세요.",
+    );
+  }
+
+  return key;
+}
+
+/**
+ * 반려동물 동반여행 API 서비스 키 가져오기
+ *
+ * NEXT_PUBLIC_TOUR_PET_API_KEY 환경변수에서 가져옵니다.
+ */
+function getPetTourServiceKey(): string {
+  const key =
+    process.env.NEXT_PUBLIC_TOUR_PET_API_KEY || process.env.TOUR_PET_API_KEY;
+
+  if (!key) {
+    throw new Error(
+      "TOUR_PET_API_KEY 환경변수가 설정되지 않았습니다. NEXT_PUBLIC_TOUR_PET_API_KEY 또는 TOUR_PET_API_KEY를 설정해주세요.",
     );
   }
 
@@ -250,4 +274,60 @@ export async function getDetailImage(contentId: string) {
   }>("/detailImage2", {
     contentId,
   });
+}
+
+/**
+ * 반려동물 동반 여행 정보 조회
+ *
+ * @param contentId - 콘텐츠ID
+ * @returns 반려동물 동반 여행 정보
+ */
+export async function getDetailPetTour(
+  contentId: string,
+): Promise<PetTourInfo | null> {
+  const serviceKey = getPetTourServiceKey();
+
+  const searchParams = new URLSearchParams({
+    serviceKey,
+    ...COMMON_PARAMS,
+    contentId,
+  });
+
+  const url = `${BASE_URL}/detailPetTour2?${searchParams.toString()}`;
+
+  console.log(`[Tour API] 호출: detailPetTour2`, { contentId });
+
+  try {
+    const response = await fetch(url, {
+      next: { revalidate: 3600 }, // 1시간 캐시
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `API 호출 실패: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data: ApiResponse<PetTourInfo> = await response.json();
+
+    // API 에러 체크
+    if (data.response.header.resultCode !== "0000") {
+      throw new Error(
+        `API 에러: ${data.response.header.resultCode} - ${data.response.header.resultMsg}`,
+      );
+    }
+
+    // 데이터 추출
+    const items = data.response.body.items?.item;
+    if (!items) {
+      return null;
+    }
+
+    // 배열이 아닌 경우 배열로 변환 후 첫 번째 항목 반환
+    const results = Array.isArray(items) ? items : [items];
+    return results[0] ?? null;
+  } catch (error) {
+    console.error(`[Tour API] 에러: detailPetTour2`, error);
+    throw error;
+  }
 }
