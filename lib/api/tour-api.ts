@@ -47,15 +47,31 @@ const COMMON_PARAMS = {
  * NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY 환경변수에서 가져옵니다.
  */
 function getServiceKey(): string {
-  const key = process.env.NEXT_PUBLIC_TOUR_API_KEY || process.env.TOUR_API_KEY;
+  const key =
+    process.env.NEXT_PUBLIC_TOUR_API_KEY ||
+    process.env.TOUR_API_KEY ||
+    process.env.NEXT_PUBLIC_TOUR_API_KEY?.trim() ||
+    process.env.TOUR_API_KEY?.trim();
 
-  if (!key) {
+  if (!key || key.trim() === "") {
+    console.error("[Tour API] 환경 변수 확인:", {
+      NEXT_PUBLIC_TOUR_API_KEY: process.env.NEXT_PUBLIC_TOUR_API_KEY
+        ? "설정됨"
+        : "미설정",
+      TOUR_API_KEY: process.env.TOUR_API_KEY ? "설정됨" : "미설정",
+    });
     throw new Error(
       "TOUR_API_KEY 환경변수가 설정되지 않았습니다. NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY를 설정해주세요.",
     );
   }
 
-  return key;
+  // 환경 변수가 제대로 읽혔는지 확인 (키 값은 로그에 출력하지 않음)
+  console.log(
+    "[Tour API] API 키 로드 성공:",
+    key.length > 0 ? `${key.substring(0, 8)}...` : "빈 값",
+  );
+
+  return key.trim();
 }
 
 /**
@@ -115,7 +131,11 @@ async function fetchApi<T>(
 
   const url = `${BASE_URL}${endpoint}?${searchParams.toString()}`;
 
-  console.log(`[Tour API] 호출: ${endpoint}`, { params });
+  console.log(`[Tour API] 호출: ${endpoint}`, {
+    params,
+    serviceKeyLength: serviceKey.length,
+    url: url.substring(0, 100) + "...", // URL 일부만 로그에 출력
+  });
 
   try {
     const response = await fetch(url, {

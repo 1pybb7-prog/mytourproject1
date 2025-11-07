@@ -125,21 +125,39 @@ export function usePetTourFilter({
     let successCount = 0;
     let nullCount = 0;
     let errorCount = 0;
+    let loadingCount = 0;
 
     petQueries.forEach((query, index) => {
       // 실제 tours 배열의 인덱스 범위 내에서만 처리
       if (index < tours.length) {
-        if (query.data) {
-          map.set(tours[index].contentid, query.data);
-          successCount++;
-        } else if (query.error) {
+        // 로딩 중인 경우 건너뛰기
+        if (query.isLoading) {
+          loadingCount++;
+          return;
+        }
+
+        // 에러가 발생한 경우
+        if (query.error) {
           errorCount++;
           console.warn(
             `[usePetTourFilter] API 에러: ${tours[index].contentid}`,
             query.error,
           );
+          return;
+        }
+
+        // 쿼리가 완료되었고 데이터가 있는 경우
+        if (query.data !== undefined) {
+          if (query.data !== null) {
+            map.set(tours[index].contentid, query.data);
+            successCount++;
+          } else {
+            // 쿼리는 완료되었지만 데이터가 null인 경우
+            nullCount++;
+          }
         } else {
-          nullCount++;
+          // 쿼리가 아직 완료되지 않은 경우 (data가 undefined)
+          loadingCount++;
         }
       }
     });
@@ -151,7 +169,18 @@ export function usePetTourFilter({
         성공: successCount,
         데이터없음: nullCount,
         에러: errorCount,
+        로딩중: loadingCount,
         맵_크기: map.size,
+        쿼리_상태_샘플: petQueries
+          .slice(0, Math.min(3, tours.length))
+          .map((q, i) => ({
+            index: i,
+            contentid: tours[i]?.contentid,
+            isLoading: q.isLoading,
+            hasData: q.data !== undefined,
+            dataIsNull: q.data === null,
+            hasError: !!q.error,
+          })),
       });
     }
 
@@ -165,15 +194,20 @@ export function usePetTourFilter({
       return tours;
     }
 
-    // 로딩 중이면 원본 목록 반환 (필터링은 로딩 완료 후 수행)
-    // 단, 일부 쿼리가 완료되었으면 완료된 것부터 필터링 시작
-    const isLoadingPetInfo = petQueries.some((query) => query.isLoading);
+    // 로딩 중인 쿼리 확인 (실제 tours 배열 범위 내에서만)
+    const isLoadingPetInfo = petQueries.some(
+      (query, index) => index < tours.length && query.isLoading,
+    );
+
+    // 완료된 쿼리 확인 (로딩이 아니고 data가 undefined가 아닌 경우)
     const hasCompletedQueries = petQueries.some(
-      (query) => !query.isLoading && (query.data !== undefined || query.error),
+      (query, index) =>
+        index < tours.length && !query.isLoading && query.data !== undefined,
     );
 
     // 모든 쿼리가 로딩 중이고 완료된 쿼리가 없으면 원본 목록 반환
     if (isLoadingPetInfo && !hasCompletedQueries) {
+      console.log("[usePetTourFilter] 쿼리 로딩 중... 완료 대기");
       return tours;
     }
 

@@ -436,12 +436,12 @@
 
 ### 페이지 기본 구조
 
-- [ ] `app/stats/page.tsx` 생성
-  - [ ] Next.js 15: `await params` 사용 (필요시)
-  - [ ] `generateMetadata` 함수로 SEO 최적화
-  - [ ] 기본 레이아웃 구조 (헤더, 섹션 구분)
-  - [ ] 반응형 레이아웃 설정 (모바일 우선)
-  - [ ] Spacing-First 정책 준수
+- [x] `app/stats/page.tsx` 생성
+  - [x] Next.js 15: `await params` 사용 (필요시)
+  - [x] `generateMetadata` 함수로 SEO 최적화
+  - [x] 기본 레이아웃 구조 (헤더, 섹션 구분)
+  - [x] 반응형 레이아웃 설정 (모바일 우선)
+  - [x] Spacing-First 정책 준수
 
 ### 타입 정의
 

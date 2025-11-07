@@ -39,25 +39,33 @@ export async function getTourList(
   } catch (error) {
     // API 키 미설정 또는 네트워크 에러 시 명확한 에러 메시지
     if (error instanceof Error) {
+      console.error("[getTourList] 에러 발생:", error.message, error);
+
       if (error.message.includes("TOUR_API_KEY")) {
-        throw new Error(
-          "관광지 데이터를 불러오려면 API 키가 필요합니다. .env.local 파일에 TOUR_API_KEY를 설정해주세요.",
+        console.error(
+          "[getTourList] API 키 미설정:",
+          "NEXT_PUBLIC_TOUR_API_KEY 또는 TOUR_API_KEY를 .env.local에 설정해주세요.",
         );
+        // API 키가 없어도 빈 배열을 반환하여 앱이 크래시되지 않도록 처리
+        return [];
       }
       if (
         error.message.includes("API 호출 실패") ||
         error.message.includes("네트워크")
       ) {
-        throw new Error(
-          "네트워크 오류가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.",
-        );
+        console.warn("[getTourList] 네트워크 에러:", error.message);
+        // 네트워크 에러도 빈 배열을 반환하여 앱이 크래시되지 않도록 처리
+        return [];
       }
       if (error.message.includes("API 에러")) {
-        throw new Error(
-          "관광지 정보를 가져오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-        );
+        console.warn("[getTourList] API 에러:", error.message);
+        // API 에러도 빈 배열을 반환하여 앱이 크래시되지 않도록 처리
+        return [];
       }
     }
-    throw error;
+
+    // 기타 에러도 빈 배열을 반환하여 앱이 크래시되지 않도록 처리
+    console.warn("[getTourList] 예상치 못한 에러:", error);
+    return [];
   }
 }
