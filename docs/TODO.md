@@ -434,21 +434,23 @@
 
 ### 북마크 목록 페이지
 
-- [ ] `app/bookmarks/page.tsx` 생성
-  - Next.js 15: `await params` 사용 (필요시)
-  - `generateMetadata` 함수로 SEO 최적화
-  - 인증된 사용자만 접근 가능
-- [ ] `components/bookmarks/BookmarkList.tsx`
-  - `TourCard` 컴포넌트 재사용
-  - Guideline 준수: Spacing-First 정책
-- [ ] `hooks/useBookmarkList.ts`
-  - 북마크 목록 훅
-  - React Query 활용
-- [ ] 북마크한 관광지 목록 표시
-- [ ] 정렬 옵션
-  - 최신순, 이름순, 지역별
-- [ ] 일괄 삭제 기능
-- [ ] 페이지 확인 (반응형 검증)
+- [x] `app/bookmarks/page.tsx` 생성 ✅
+  - [x] Next.js 15: `await params` 사용 (필요시) ✅
+  - [x] `generateMetadata` 함수로 SEO 최적화 ✅
+  - [x] 인증된 사용자만 접근 가능 ✅
+- [x] `components/bookmarks/BookmarkList.tsx` ✅
+  - [x] `TourCard` 컴포넌트 재사용 ✅
+  - [x] Guideline 준수: Spacing-First 정책 ✅
+- [x] `hooks/useBookmarkList.ts` ✅
+  - [x] 북마크 목록 훅 ✅
+  - [x] React Query 활용 ✅
+- [x] `hooks/useBookmarkedTours.ts` 생성 ✅
+  - [x] 북마크한 관광지 상세 정보 조회 훅 ✅
+- [x] 북마크한 관광지 목록 표시 ✅
+- [x] 정렬 옵션 ✅
+  - [x] 최신순, 이름순, 지역별 ✅
+- [x] 일괄 삭제 기능 ✅
+- [ ] 페이지 확인 (반응형 검증) (사용자 테스트 필요)
 
 ---
 
