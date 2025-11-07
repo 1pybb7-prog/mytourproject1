@@ -10,6 +10,7 @@ import {
   type ClusterOptions,
 } from "@/lib/utils/marker-clusterer";
 import { convertTourCoordinates } from "@/lib/utils/coordinate-converter";
+import { createMarkerIcon } from "@/lib/utils/marker-icon";
 import type { TourItem } from "@/lib/types/tour";
 
 /**
@@ -82,6 +83,10 @@ export interface UseNaverMapReturn {
   ) => void;
   /** 정보창 닫기 */
   closeInfoWindow: () => void;
+  /** 현재 위치로 이동 및 마커 표시 */
+  moveToCurrentLocation: () => Promise<void>;
+  /** 현재 위치 마커 제거 */
+  clearCurrentLocationMarker: () => void;
   /** 지도 재초기화 */
   reinitialize: () => void;
 }
@@ -153,6 +158,7 @@ export function useNaverMap(
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const infoWindowRef = useRef<naver.maps.InfoWindow | null>(null);
   const markersRef = useRef<naver.maps.Marker[]>([]);
+  const currentLocationMarkerRef = useRef<naver.maps.Marker | null>(null); // 현재 위치 마커
   const naverMapsRef = useRef<typeof naver.maps | null>(null);
   const containerElementRef = useRef<HTMLElement | null>(null);
   const isInitializedRef = useRef(false); // 초기화 완료 여부 추적
@@ -397,38 +403,11 @@ export function useNaverMap(
             const position = convertTourCoordinates(tour.mapx, tour.mapy);
             const latLng = new naverMaps.LatLng(position.lat, position.lng);
 
-            // 마커 생성
+            // 마커 생성 (관광 타입별 아이콘 사용)
             const marker = new naverMaps.Marker({
               position: latLng,
               map: mapRef.current!,
-              icon: {
-                content: `
-                  <div style="
-                    width: 30px;
-                    height: 30px;
-                    background-color: #ff4444;
-                    border-radius: 50% 50% 50% 0;
-                    transform: rotate(-45deg);
-                    border: 2px solid white;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                    cursor: pointer;
-                  ">
-                    <div style="
-                      width: 100%;
-                      height: 100%;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      transform: rotate(45deg);
-                      color: white;
-                      font-size: 16px;
-                    ">
-                      📍
-                    </div>
-                  </div>
-                `,
-                anchor: new naverMaps.Point(15, 30),
-              },
+              icon: createMarkerIcon(tour, naverMaps, 30),
             });
 
             // 마커 클릭 이벤트
@@ -564,6 +543,106 @@ export function useNaverMap(
   }, []);
 
   /**
+   * 현재 위치로 이동 및 마커 표시
+   */
+  const moveToCurrentLocation = useCallback(async (): Promise<void> => {
+    if (!mapRef.current || !naverMapsRef.current) {
+      console.warn("[useNaverMap] 지도가 초기화되지 않았습니다");
+      throw new Error("지도가 초기화되지 않았습니다");
+    }
+
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        const error = new Error(
+          "이 브라우저는 위치 서비스를 지원하지 않습니다",
+        );
+        console.error("[useNaverMap]", error.message);
+        reject(error);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const naverMaps = naverMapsRef.current!;
+          const map = mapRef.current!;
+
+          console.log("[useNaverMap] 현재 위치:", { latitude, longitude });
+
+          // 지도 중심 이동
+          const latLng = new naverMaps.LatLng(latitude, longitude);
+          map.setCenter(latLng);
+          map.setZoom(15);
+
+          // 기존 현재 위치 마커 제거
+          if (currentLocationMarkerRef.current) {
+            currentLocationMarkerRef.current.setMap(null);
+          }
+
+          // 현재 위치 마커 생성
+          const marker = new naverMaps.Marker({
+            position: latLng,
+            map,
+            icon: {
+              content: `
+                <div style="
+                  width: 20px;
+                  height: 20px;
+                  background-color: #4285f4;
+                  border-radius: 50%;
+                  border: 3px solid white;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                "></div>
+              `,
+              anchor: new naverMaps.Point(10, 10),
+            },
+            zIndex: 1000, // 다른 마커보다 위에 표시
+          });
+
+          currentLocationMarkerRef.current = marker;
+          console.log("[useNaverMap] 현재 위치 마커 표시 완료");
+
+          resolve();
+        },
+        (error) => {
+          console.error("[useNaverMap] 위치 가져오기 실패:", error);
+          let errorMessage = "위치를 가져올 수 없습니다.";
+
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "위치 권한이 거부되었습니다.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "위치 정보를 사용할 수 없습니다.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "위치 요청 시간이 초과되었습니다.";
+              break;
+          }
+
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        },
+      );
+    });
+  }, []);
+
+  /**
+   * 현재 위치 마커 제거
+   */
+  const clearCurrentLocationMarker = useCallback(() => {
+    if (currentLocationMarkerRef.current) {
+      currentLocationMarkerRef.current.setMap(null);
+      currentLocationMarkerRef.current = null;
+      console.log("[useNaverMap] 현재 위치 마커 제거");
+    }
+  }, []);
+
+  /**
    * 지도 재초기화
    */
   const reinitialize = useCallback(() => {
@@ -635,6 +714,12 @@ export function useNaverMap(
         infoWindowRef.current = null;
       }
 
+      // 현재 위치 마커 정리
+      if (currentLocationMarkerRef.current) {
+        currentLocationMarkerRef.current.setMap(null);
+        currentLocationMarkerRef.current = null;
+      }
+
       // 지도 정리
       if (mapRef.current) {
         mapRef.current = null;
@@ -656,6 +741,8 @@ export function useNaverMap(
     clearMarkers,
     showInfoWindow,
     closeInfoWindow,
+    moveToCurrentLocation,
+    clearCurrentLocationMarker,
     reinitialize,
   };
 }

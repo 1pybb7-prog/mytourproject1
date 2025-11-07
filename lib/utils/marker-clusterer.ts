@@ -16,6 +16,7 @@
 
 import type { TourItem } from "@/lib/types/tour";
 import { convertTourCoordinates } from "./coordinate-converter";
+import { createMarkerIcon } from "./marker-icon";
 
 /**
  * 마커 데이터 타입
@@ -342,36 +343,13 @@ export function createMarker(
     markerData.position.lng,
   );
 
+  // 관광 타입별 아이콘 사용
+  const icon = createMarkerIcon(markerData.tour, naver.maps, 30);
+
   const marker = new naver.maps.Marker({
     position,
     map,
-    icon: {
-      content: `
-        <div style="
-          width: 30px;
-          height: 30px;
-          background-color: #ff4444;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        ">
-          <div style="
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(45deg);
-            color: white;
-            font-size: 16px;
-          ">
-            📍
-          </div>
-        </div>
-      `,
-      anchor: new naver.maps.Point(15, 30),
-    },
+    icon,
   });
 
   return marker;

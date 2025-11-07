@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useId } from "react";
+import { useEffect, useRef, useId, useState, useCallback } from "react";
 import { useNaverMap } from "@/hooks/useNaverMap";
 import type { TourItem } from "@/lib/types/tour";
 import { convertTourCoordinates } from "@/lib/utils/coordinate-converter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MapControls from "@/components/MapControls";
 
 /**
  * @file NaverMap.tsx
@@ -102,6 +103,11 @@ function NaverMapComponent({
   const containerRef = useRef<HTMLDivElement>(null);
   const prevToursRef = useRef<TourItem[]>([]);
   const prevSelectedTourIdRef = useRef<string | undefined>(undefined);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMeasuring, setIsMeasuring] = useState(false);
+  const measuringPolylineRef = useRef<naver.maps.Polyline | null>(null);
+  const measuringMarkersRef = useRef<naver.maps.Marker[]>([]);
+  const measuringPointsRef = useRef<naver.maps.LatLng[]>([]);
 
   // 지도 훅 사용 (containerRef 우선, fallback으로 mapId 사용)
   const {
@@ -112,6 +118,7 @@ function NaverMapComponent({
     clearMarkers,
     moveToTour,
     showInfoWindow,
+    moveToCurrentLocation,
   } = useNaverMap({
     containerRef: containerRef,
     containerId: mapId, // fallback
@@ -182,6 +189,259 @@ function NaverMapComponent({
     }
   }, [map, isLoading, selectedTourId, tours, moveToTour, showInfoWindow]);
 
+  /**
+   * 전체화면 모드 토글
+   */
+  const handleFullscreenToggle = useCallback(() => {
+    if (!containerRef.current) {
+      return;
+    }
+
+    if (!isFullscreen) {
+      // 전체화면 진입
+      if (containerRef.current.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      } else if ((containerRef.current as any).webkitRequestFullscreen) {
+        (containerRef.current as any).webkitRequestFullscreen();
+      } else if ((containerRef.current as any).mozRequestFullScreen) {
+        (containerRef.current as any).mozRequestFullScreen();
+      } else if ((containerRef.current as any).msRequestFullscreen) {
+        (containerRef.current as any).msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+      console.log("[NaverMap] 전체화면 모드 진입");
+    } else {
+      // 전체화면 종료
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
+      setIsFullscreen(false);
+      console.log("[NaverMap] 전체화면 모드 종료");
+    }
+  }, [isFullscreen]);
+
+  /**
+   * 전체화면 상태 변경 감지
+   */
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen =
+        document.fullscreenElement !== null ||
+        (document as any).webkitFullscreenElement !== null ||
+        (document as any).mozFullScreenElement !== null ||
+        (document as any).msFullscreenElement !== null;
+
+      setIsFullscreen(isCurrentlyFullscreen);
+      console.log("[NaverMap] 전체화면 상태 변경:", isCurrentlyFullscreen);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "MSFullscreenChange",
+        handleFullscreenChange,
+      );
+    };
+  }, []);
+
+  /**
+   * 거리 측정 모드 토글
+   */
+  const handleMeasuringToggle = useCallback(() => {
+    if (!map || !window.naver?.maps) {
+      return;
+    }
+
+    const naverMaps = window.naver.maps;
+
+    if (!isMeasuring) {
+      // 거리 측정 모드 시작
+      setIsMeasuring(true);
+      console.log("[NaverMap] 거리 측정 모드 시작");
+
+      // 지도 클릭 이벤트 추가
+      const clickListener = naverMaps.Event.addListener(
+        map,
+        "click",
+        (e: naver.maps.PointerEvent) => {
+          if (!e.coord) {
+            return;
+          }
+
+          // Coord를 LatLng로 변환
+          const coord = e.coord as naver.maps.LatLng;
+          const point = new naverMaps.LatLng(coord.lat(), coord.lng());
+          measuringPointsRef.current.push(point);
+
+          // 마커 추가
+          const marker = new naverMaps.Marker({
+            position: point,
+            map,
+            icon: {
+              content: `
+                <div style="
+                  width: 12px;
+                  height: 12px;
+                  background-color: #ff4444;
+                  border-radius: 50%;
+                  border: 2px solid white;
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                "></div>
+              `,
+              anchor: new naverMaps.Point(6, 6),
+            },
+            zIndex: 1001,
+          });
+          measuringMarkersRef.current.push(marker);
+
+          // 두 점 이상이면 선 그리기
+          if (measuringPointsRef.current.length >= 2) {
+            // 기존 선 제거
+            if (measuringPolylineRef.current) {
+              measuringPolylineRef.current.setMap(null);
+            }
+
+            // 새 선 그리기
+            const polyline = new naverMaps.Polyline({
+              map,
+              path: measuringPointsRef.current,
+              strokeColor: "#ff4444",
+              strokeWeight: 3,
+              strokeOpacity: 0.8,
+              zIndex: 1000,
+            });
+            measuringPolylineRef.current = polyline;
+
+            // 거리 계산 및 표시 (Haversine 공식 사용)
+            let totalDistance = 0;
+            for (let i = 1; i < measuringPointsRef.current.length; i++) {
+              const p1 = measuringPointsRef.current[i - 1];
+              const p2 = measuringPointsRef.current[i];
+
+              // Haversine 공식으로 거리 계산 (미터 단위)
+              const R = 6371000; // 지구 반지름 (미터)
+              const dLat = ((p2.lat() - p1.lat()) * Math.PI) / 180;
+              const dLng = ((p2.lng() - p1.lng()) * Math.PI) / 180;
+              const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos((p1.lat() * Math.PI) / 180) *
+                  Math.cos((p2.lat() * Math.PI) / 180) *
+                  Math.sin(dLng / 2) *
+                  Math.sin(dLng / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const distance = R * c;
+
+              totalDistance += distance;
+            }
+
+            const distanceKm = (totalDistance / 1000).toFixed(2);
+            const distanceM = totalDistance.toFixed(0);
+
+            console.log(
+              `[NaverMap] 거리 측정: ${distanceKm}km (${distanceM}m)`,
+            );
+
+            // 정보창 표시 (마지막 마커에)
+            const infoWindow = new naverMaps.InfoWindow({
+              content: `
+                <div style="padding: 8px; font-size: 12px;">
+                  총 거리: ${distanceKm}km (${distanceM}m)
+                </div>
+              `,
+              backgroundColor: "#ffffff",
+              borderColor: "#cccccc",
+              borderWidth: 1,
+            });
+            infoWindow.open(map, point);
+          }
+        },
+      );
+
+      // 저장 (나중에 제거하기 위해)
+      (map as any).__measuringClickListener = clickListener;
+    } else {
+      // 거리 측정 모드 종료
+      setIsMeasuring(false);
+      console.log("[NaverMap] 거리 측정 모드 종료");
+
+      // 이벤트 리스너 제거
+      if ((map as any).__measuringClickListener) {
+        const listener = (map as any).__measuringClickListener;
+        // removeListener는 리스너 객체를 인자로 받음
+        naverMaps.Event.removeListener(listener);
+        delete (map as any).__measuringClickListener;
+      }
+
+      // 마커 및 선 제거
+      measuringMarkersRef.current.forEach((marker) => {
+        marker.setMap(null);
+      });
+      measuringMarkersRef.current = [];
+
+      if (measuringPolylineRef.current) {
+        measuringPolylineRef.current.setMap(null);
+        measuringPolylineRef.current = null;
+      }
+
+      measuringPointsRef.current = [];
+    }
+  }, [map, isMeasuring]);
+
+  /**
+   * 로드뷰 열기
+   */
+  const handleRoadView = useCallback(() => {
+    if (!map) {
+      return;
+    }
+
+    const center = map.getCenter();
+    if (!center) {
+      return;
+    }
+
+    // center는 LatLng 타입이므로 lat(), lng() 메서드 사용
+    const lat = (center as naver.maps.LatLng).lat();
+    const lng = (center as naver.maps.LatLng).lng();
+
+    // Naver 로드뷰 URL 생성
+    const roadViewUrl = `https://map.naver.com/v5/roadview/${lng},${lat}`;
+    window.open(roadViewUrl, "_blank");
+    console.log("[NaverMap] 로드뷰 열기:", { lat, lng });
+  }, [map]);
+
+  /**
+   * 현재 위치로 이동
+   */
+  const handleCurrentLocation = useCallback(async () => {
+    try {
+      await moveToCurrentLocation();
+      console.log("[NaverMap] 현재 위치로 이동 완료");
+    } catch (error) {
+      console.error("[NaverMap] 현재 위치로 이동 실패:", error);
+      // 에러는 MapControls에서 이미 처리됨
+    }
+  }, [moveToCurrentLocation]);
+
   // 지도 컨테이너는 항상 렌더링 (ref가 설정되어야 함)
   return (
     <div className={cn("relative w-full", height, className)}>
@@ -205,6 +465,19 @@ function NaverMapComponent({
           (isLoading || error) && "hidden", // 로딩/에러 시 숨김
         )}
       />
+      {/* 지도 컨트롤 버튼 */}
+      {map && !isLoading && !error && (
+        <MapControls
+          map={map}
+          isFullscreen={isFullscreen}
+          onFullscreenToggle={handleFullscreenToggle}
+          onCurrentLocation={handleCurrentLocation}
+          isMeasuring={isMeasuring}
+          onMeasuringToggle={handleMeasuringToggle}
+          onRoadView={handleRoadView}
+          position="bottom-right"
+        />
+      )}
     </div>
   );
 }
