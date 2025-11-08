@@ -70,8 +70,37 @@ export function usePetTourFilter({
         queryKey: ["tours", "pet", tour.contentid] as const,
         queryFn: async () => {
           try {
+            console.log(
+              `[usePetTourFilter] 반려동물 정보 조회 시작: ${tour.contentid}`,
+              {
+                title: tour.title,
+                addr1: tour.addr1,
+              },
+            );
             const { getTourPet } = await import("@/actions/get-tour-pet");
             const result = await getTourPet(tour.contentid);
+
+            // 반려동물 정보 조회 결과 로깅
+            if (result) {
+              console.log(
+                `[usePetTourFilter] 반려동물 정보 조회 성공: ${tour.contentid}`,
+                {
+                  acmpyTypeCd: result.acmpyTypeCd,
+                  acmpyPsblCpam: result.acmpyPsblCpam,
+                  hasPetInfo: Boolean(
+                    result.acmpyTypeCd ||
+                      result.acmpyPsblCpam ||
+                      result.acmpyNeedMtr ||
+                      result.etcAcmpyInfo,
+                  ),
+                },
+              );
+            } else {
+              console.log(
+                `[usePetTourFilter] 반려동물 정보 없음: ${tour.contentid}`,
+              );
+            }
+
             // null이 반환되는 경우도 정상적인 응답으로 처리
             return result;
           } catch (error) {

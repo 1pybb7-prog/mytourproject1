@@ -14,7 +14,8 @@ import { useTourList } from "@/hooks/useTourList";
 import { useTourSearch } from "@/hooks/useTourSearch";
 import { useBookmarkList } from "@/hooks/useBookmarkList";
 import { usePetTourFilter } from "@/hooks/usePetTourFilter";
-import { List, Map } from "lucide-react";
+import { useFindPetFriendlyTours } from "@/hooks/useFindPetFriendlyTours";
+import { List, Map as MapIcon } from "lucide-react";
 import type { TourItem } from "@/lib/types/tour";
 
 /**
@@ -55,7 +56,9 @@ export default function Home() {
   const [selectedTourId, setSelectedTourId] = useState<string | undefined>();
   const [hoveredTourId, setHoveredTourId] = useState<string | undefined>();
   const [isBookmarkFilterActive, setIsBookmarkFilterActive] = useState(false);
-  const numOfRows = 12; // 페이지당 항목 수
+
+  // 반려동물 필터가 활성화되면 더 많은 관광지를 조회 (반려동물 정보가 있는 관광지가 적을 수 있음)
+  const numOfRows = filters.petFriendly ? 100 : 12; // 페이지당 항목 수
 
   // 북마크 목록 조회
   const { bookmarkedContentIds } = useBookmarkList();
@@ -68,7 +71,10 @@ export default function Home() {
     setPageNo(1);
     setSelectedTourId(undefined);
     setHoveredTourId(undefined);
-    console.log("[Home] 필터/검색/북마크 필터 변경으로 페이지 1로 리셋");
+    console.log("[Home] 필터/검색/북마크 필터 변경으로 페이지 1로 리셋", {
+      petFriendly: filters.petFriendly,
+      numOfRows: filters.petFriendly ? 100 : 12,
+    });
   }, [
     filters.areaCode,
     filters.contentTypeId,
@@ -98,34 +104,81 @@ export default function Home() {
     enabled: isSearchMode,
   });
 
+  // 반려동물 필터가 활성화되면 전용 함수 사용
+  // 빠른 응답을 위해 먼저 적은 페이지만 조회하고, 최소 결과 수를 찾으면 바로 반환
+  const petFriendlyQuery = useFindPetFriendlyTours({
+    areaCode: filters.areaCode,
+    contentTypeId: filters.contentTypeId,
+    maxPages: 3, // 3페이지까지 조회 (300개 관광지) - 빠른 응답을 위해 줄임
+    numOfRows: 100,
+    maxResults: 20, // 최대 20개 결과 - 빠른 응답을 위해 줄임
+    minResults: 10, // 최소 10개 찾으면 바로 반환
+    enabled: Boolean(filters.petFriendly) && !isSearchMode, // 검색 모드가 아닐 때만 사용
+  });
+
   // 현재 사용할 데이터 결정
   const { data: rawTours = [], isLoading } = isSearchMode
     ? searchQuery
     : listQuery;
 
+  // 반려동물 필터가 활성화되고 검색 모드가 아닐 때는 전용 함수 결과 사용
+  const petFriendlyTours = useMemo(() => {
+    if (filters.petFriendly && !isSearchMode && petFriendlyQuery.data) {
+      console.log(
+        "[Home] 반려동물 동반 가능한 관광지 찾기 결과:",
+        petFriendlyQuery.data.length,
+        "개",
+      );
+      // 반려동물 정보가 포함된 관광지 목록 반환
+      return petFriendlyQuery.data.map((item) => item.tour);
+    }
+    return null;
+  }, [filters.petFriendly, isSearchMode, petFriendlyQuery.data]);
+
+  // 반려동물 정보 맵 생성 (전용 함수 결과에서)
+  const petInfoMapFromQuery = useMemo(() => {
+    if (filters.petFriendly && !isSearchMode && petFriendlyQuery.data) {
+      const map = new Map();
+      petFriendlyQuery.data.forEach((item) => {
+        map.set(item.tour.contentid, item.petInfo);
+      });
+      console.log("[Home] 반려동물 정보 맵 생성:", map.size, "개");
+      return map;
+    }
+    return null;
+  }, [filters.petFriendly, isSearchMode, petFriendlyQuery.data]);
+
   // 북마크 필터 적용
   const toursAfterBookmark = useMemo(() => {
+    // 반려동물 필터가 활성화되고 검색 모드가 아닐 때는 전용 함수 결과 사용
+    const sourceTours = petFriendlyTours || rawTours;
+
     if (!isBookmarkFilterActive) {
-      return rawTours;
+      return sourceTours;
     }
 
     // 북마크된 관광지만 필터링
-    const filtered = rawTours.filter((tour) =>
+    const filtered = sourceTours.filter((tour) =>
       bookmarkedContentIds.has(tour.contentid),
     );
     console.log(
       "[Home] 북마크 필터 적용:",
-      rawTours.length,
+      sourceTours.length,
       "->",
       filtered.length,
     );
     return filtered;
-  }, [rawTours, isBookmarkFilterActive, bookmarkedContentIds]);
+  }, [
+    rawTours,
+    petFriendlyTours,
+    isBookmarkFilterActive,
+    bookmarkedContentIds,
+  ]);
 
-  // 반려동물 필터 적용
+  // 반려동물 필터 적용 (검색 모드이거나 전용 함수를 사용하지 않을 때만)
   const {
-    filteredTours: tours,
-    petInfoMap,
+    filteredTours: toursFromFilter,
+    petInfoMap: petInfoMapFromFilter,
     isLoading: isPetFilterLoading,
   } = usePetTourFilter({
     tours: toursAfterBookmark,
@@ -133,8 +186,48 @@ export default function Home() {
     petSize: filters.petSize,
     petType: filters.petType,
     petPlace: filters.petPlace,
-    enabled: Boolean(filters.petFriendly),
+    enabled:
+      Boolean(filters.petFriendly) && (isSearchMode || !petFriendlyQuery.data), // 검색 모드이거나 전용 함수 결과가 없을 때만 사용
   });
+
+  // 최종 관광지 목록 결정
+  const tours = useMemo(() => {
+    if (filters.petFriendly && !isSearchMode && petFriendlyTours) {
+      // 전용 함수 결과 사용
+      return petFriendlyTours;
+    }
+    // 기존 필터 결과 사용
+    return toursFromFilter;
+  }, [filters.petFriendly, isSearchMode, petFriendlyTours, toursFromFilter]);
+
+  // 최종 반려동물 정보 맵 결정
+  const petInfoMap = useMemo(() => {
+    if (filters.petFriendly && !isSearchMode && petInfoMapFromQuery) {
+      // 전용 함수 결과 사용
+      return petInfoMapFromQuery;
+    }
+    // 기존 필터 결과 사용
+    return petInfoMapFromFilter;
+  }, [
+    filters.petFriendly,
+    isSearchMode,
+    petInfoMapFromQuery,
+    petInfoMapFromFilter,
+  ]);
+
+  // 로딩 상태 결정
+  const isLoadingTours = useMemo(() => {
+    if (filters.petFriendly && !isSearchMode) {
+      return petFriendlyQuery.isLoading || isLoading;
+    }
+    return isLoading || isPetFilterLoading;
+  }, [
+    filters.petFriendly,
+    isSearchMode,
+    petFriendlyQuery.isLoading,
+    isLoading,
+    isPetFilterLoading,
+  ]);
 
   /**
    * 검색 실행 핸들러
@@ -285,7 +378,7 @@ export default function Home() {
                 <span>목록</span>
               </TabsTrigger>
               <TabsTrigger value="map" className="flex items-center gap-2">
-                <Map className="size-4" />
+                <MapIcon className="size-4" />
                 <span>지도</span>
               </TabsTrigger>
             </TabsList>
@@ -293,7 +386,7 @@ export default function Home() {
             <TabsContent value="list" className="flex flex-col gap-6">
               <TourList
                 tours={tours}
-                isLoading={isLoading || isPetFilterLoading}
+                isLoading={isLoadingTours}
                 keyword={searchKeyword}
                 areaCode={filters.areaCode}
                 contentTypeId={filters.contentTypeId}
@@ -308,7 +401,7 @@ export default function Home() {
                 isPetFilterActive={Boolean(filters.petFriendly)}
               />
               {/* 페이지네이션 */}
-              {!isLoading && !isPetFilterLoading && tours.length > 0 && (
+              {!isLoadingTours && tours.length > 0 && (
                 <TourPagination
                   currentPage={pageNo}
                   itemsPerPage={numOfRows}
